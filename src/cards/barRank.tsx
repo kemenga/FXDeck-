@@ -1,48 +1,9 @@
-/* 数据类卡:数字大卡 / 横条排名 —— 全部原创视觉设计 */
+/* 横条排名:条形生长 + 数值滚动 */
 import { COMMON_CTRLS, type CardDef } from "../core/types";
 import { count, easeOut3, enter } from "../core/anim";
+import { FONT } from "./shared";
 
-/* ── 数字大卡:kicker + 滚动计数 + 单位 + 脚注 ── */
-export const bigNumber: CardDef<any> = {
-  kind: "bigNumber",
-  name: "数字大卡",
-  desc: "里程碑/成绩/金额:巨号滚动计数,一行小注",
-  defaults: { kicker: "MILESTONE", value: "10000", unit: "粉", note: "三个月达成", pos: "right", acc: "cyan", offX: 0, offY: 0 },
-  ctrls: [
-    { k: "kicker", label: "眉题(英文等宽)", type: "text" },
-    { k: "value", label: "数字", type: "text" },
-    { k: "unit", label: "单位", type: "text" },
-    { k: "note", label: "小注", type: "text" },
-    ...COMMON_CTRLS,
-  ],
-  render: ({ p, t }) => {
-    const val = Number(p.value) || 0;
-    const shown = count(t, val);
-    const en = enter(t);
-    const tick = easeOut3((t - 1.6) / 0.4); // 小注稍后出现
-    return (
-      <div className="glass" style={{ minWidth: 420, padding: "34px 46px", fontFamily: "var(--deck-font)", opacity: en, transform: `translateY(${((1 - en) * 20).toFixed(1)}px)` }}>
-        {p.kicker ? (
-          <div style={{ fontSize: 20, letterSpacing: "0.34em", fontWeight: 700, color: "var(--acc)", fontFamily: "var(--deck-mono)", marginBottom: 10 }}>
-            {String(p.kicker).toUpperCase()}
-          </div>
-        ) : null}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-          <span style={{ fontSize: 148, fontWeight: 900, lineHeight: 1, color: "#f4f7fa", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
-            {shown.toLocaleString("en-US")}
-          </span>
-          {p.unit ? <span style={{ fontSize: 46, fontWeight: 800, color: "var(--acc)" }}>{String(p.unit)}</span> : null}
-        </div>
-        {p.note ? (
-          <div style={{ fontSize: 27, color: "rgba(244,247,250,.66)", marginTop: 14, opacity: tick }}>{String(p.note)}</div>
-        ) : null}
-      </div>
-    );
-  },
-};
-
-/* ── 横条排名:条形生长 + 数值滚动 ── */
-export const barRank: CardDef<any> = {
+const def: CardDef<any> = {
   kind: "barRank",
   name: "横条排名",
   desc: "多项对比:「名称,数值」一行一项,| 分隔;条按值生长",
@@ -71,7 +32,7 @@ export const barRank: CardDef<any> = {
     const max = Math.max(1, ...rows.map((r) => r.v));
     const en = enter(t);
     return (
-      <div className="glass" style={{ minWidth: 520, maxWidth: 820, padding: "30px 36px", fontFamily: "var(--deck-font)", opacity: en }}>
+      <div className="glass" style={{ ...FONT, minWidth: 520, maxWidth: 820, padding: "30px 36px", opacity: en }}>
         {p.title ? <div style={{ fontSize: 30, fontWeight: 800, color: "#f4f7fa", marginBottom: 18 }}>{String(p.title)}</div> : null}
         {rows.map((r, i) => {
           const gr = easeOut3((t - (0.3 + i * 0.4)) / 0.8);
@@ -103,4 +64,4 @@ export const barRank: CardDef<any> = {
   },
 };
 
-export const dataCards = [bigNumber, barRank];
+export default def;
