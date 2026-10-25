@@ -40,9 +40,7 @@ const def: CardDef<any> = {
       const chars = Math.floor(vis * raw.length);
       const typing = t >= start && t < start + 0.45;
       const { prompt, color, promptColor } = lineStyle(raw);
-      const text = raw.startsWith("$") || raw.startsWith("✓") || raw.startsWith("✗") || raw.startsWith("#")
-        ? raw.slice(1).trimStart()
-        : raw;
+      const text = raw.startsWith("$") || raw.startsWith("✓") || raw.startsWith("✗") || raw.startsWith("#") ? raw.slice(1).trimStart() : raw;
       return (
         <div key={i} style={{ display: "flex", gap: 12, minHeight: 40, alignItems: "center", opacity: vis > 0 ? 1 : 0 }}>
           <span style={{ color: promptColor, fontWeight: 800, flex: "none" }}>{prompt}</span>
@@ -74,15 +72,22 @@ const def: CardDef<any> = {
           transform: `translateY(${((1 - en) * 18).toFixed(1)}px)`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 18px", background: "rgba(255,255,255,.05)", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "12px 18px",
+            background: "rgba(255,255,255,.05)",
+            borderBottom: "1px solid rgba(255,255,255,.08)",
+          }}
+        >
           {["#ff5f57", "#febc2e", "#28c840"].map((c) => (
             <span key={c} style={{ width: 12, height: 12, borderRadius: "50%", background: c, flex: "none" }} />
           ))}
           <span style={{ marginLeft: 10, fontSize: 15, color: "rgba(244,247,250,.55)" }}>{String(p.title || "terminal")}</span>
         </div>
-        <div style={{ padding: "18px 24px 20px", fontSize: 23, lineHeight: 1.85, minHeight: 44 + lines.length * 44 }}>
-          {body}
-        </div>
+        <div style={{ padding: "18px 24px 20px", fontSize: 23, lineHeight: 1.85, minHeight: 44 + lines.length * 44 }}>{body}</div>
       </div>
     );
   },

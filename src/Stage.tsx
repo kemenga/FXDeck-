@@ -44,40 +44,56 @@ function CardAt({
   const interactive = !!(onPick || onMove);
   return (
     <div
+      // 拖拽态从 ref 读:拖动期间 onMove 会触发重渲,is-drag 类随任一次重渲生效,无需为它单独开状态
+      // eslint-disable-next-line react-hooks/refs -- 见上:有意的渲染期读 ref,微优化不加渲染
       className={"fd-card" + (selected ? " is-sel" : "") + (dragRef.current?.moved ? " is-drag" : "")}
       data-card={card.id}
-      onPointerDown={interactive ? (e) => {
-        // 只响应主键;文本输入类的卡内容不抢拖拽(比如字幕选字)——交给浏览器默认行为
-        if (e.button !== 0) return;
-        dragRef.current = {
-          x0: e.clientX,
-          y0: e.clientY,
-          ox: Number(card.params.offX) || 0,
-          oy: Number(card.params.offY) || 0,
-          moved: false,
-        };
-        // 捕获指针保证快速拖出卡片范围也不断线;合成事件没有活动指针时会抛,不影响拖拽本身
-        try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* 忽略 */ }
-        e.stopPropagation();
-        onPick?.(card.id);
-      } : undefined}
-      onPointerMove={onMove ? (e) => {
-        const d = dragRef.current;
-        if (!d) return;
-        const dx = (e.clientX - d.x0) / scale;
-        const dy = (e.clientY - d.y0) / scale;
-        if (!d.moved && Math.hypot(dx, dy) < 3) return; // 3px 内算点击,不动
-        d.moved = true;
-        onMove(card.id, Math.round(d.ox + dx), Math.round(d.oy + dy));
-      } : undefined}
+      onPointerDown={
+        interactive
+          ? (e) => {
+              // 只响应主键;文本输入类的卡内容不抢拖拽(比如字幕选字)——交给浏览器默认行为
+              if (e.button !== 0) return;
+              dragRef.current = {
+                x0: e.clientX,
+                y0: e.clientY,
+                ox: Number(card.params.offX) || 0,
+                oy: Number(card.params.offY) || 0,
+                moved: false,
+              };
+              // 捕获指针保证快速拖出卡片范围也不断线;合成事件没有活动指针时会抛,不影响拖拽本身
+              try {
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+              } catch {
+                /* 忽略 */
+              }
+              e.stopPropagation();
+              onPick?.(card.id);
+            }
+          : undefined
+      }
+      onPointerMove={
+        onMove
+          ? (e) => {
+              const d = dragRef.current;
+              if (!d) return;
+              const dx = (e.clientX - d.x0) / scale;
+              const dy = (e.clientY - d.y0) / scale;
+              if (!d.moved && Math.hypot(dx, dy) < 3) return; // 3px 内算点击,不动
+              d.moved = true;
+              onMove(card.id, Math.round(d.ox + dx), Math.round(d.oy + dy));
+            }
+          : undefined
+      }
       onPointerUp={(e) => {
         dragRef.current = null;
         (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
       }}
-      onPointerCancel={() => { dragRef.current = null; }}
+      onPointerCancel={() => {
+        dragRef.current = null;
+      }}
       style={{
         position: "absolute",
-        ...ANCHOR[pos] ?? ANCHOR.left,
+        ...(ANCHOR[pos] ?? ANCHOR.left),
         marginLeft: Number(card.params.offX) || 0,
         marginTop: Number(card.params.offY) || 0,
         ["--acc" as string]: acc,
@@ -126,10 +142,7 @@ export function Stage({
   const live = cards.filter((c) => now >= c.start - 0.001 && now < c.end);
   return (
     <div ref={wrap} className="fd-stagewrap">
-      <div
-        className="fd-stage"
-        style={{ width: W, height: H, transform: `translate(-50%,-50%) scale(${scale})` }}
-      >
+      <div className="fd-stage" style={{ width: W, height: H, transform: `translate(-50%,-50%) scale(${scale})` }}>
         {videoUrl ? (
           <video
             src={videoUrl}
@@ -141,7 +154,13 @@ export function Stage({
             ref={(el) => {
               if (el && el.dataset.bind !== "1") {
                 el.dataset.bind = "1";
-                (el as any).__seek = (t: number) => { try { el.currentTime = t; } catch { /* 元数据未到 */ } };
+                (el as any).__seek = (t: number) => {
+                  try {
+                    el.currentTime = t;
+                  } catch {
+                    /* 元数据未到 */
+                  }
+                };
               }
             }}
           />

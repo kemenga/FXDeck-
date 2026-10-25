@@ -8,6 +8,9 @@ import { Stage } from "./Stage";
 import { CardPreview } from "./CardPreview";
 import { fmtTime } from "./core/anim";
 
+/* 无编排时的稳定空数组:让依赖 cards 的 useMemo/Hooks 不因空态重渲 */
+const EMPTY_CARDS: DocCard[] = [];
+
 export default function App() {
   const [doc, setDoc] = useState<Doc | null>(null);
   const [now, setNow] = useState(0);
@@ -23,7 +26,10 @@ export default function App() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const nowRef = useRef(0);
-  nowRef.current = now;
+  // 每次提交后同步最新时间到 ref:快捷键等非渲染路径要读「现在」,又不该触发重渲
+  useEffect(() => {
+    nowRef.current = now;
+  });
 
   /* 自动存档:任何编辑后 600ms 落进 localStorage,刷新/误关自动恢复。
      只存服务器路径的垫底视频(blob 地址存了也是坏的);编排本体全量存 */
@@ -50,7 +56,7 @@ export default function App() {
     return () => clearTimeout(id);
   }, [doc, videoUrl, videoServerSide]);
 
-  const cards = doc?.cards ?? [];
+  const cards = doc?.cards ?? EMPTY_CARDS;
   const sel = cards.find((c) => c.id === selId) ?? null;
   const dur = Math.max(0, ...cards.map((c) => c.end), videoDur);
 
@@ -64,7 +70,10 @@ export default function App() {
     const tick = (tm: number) => {
       if (v) {
         setNow(v.currentTime);
-        if (v.ended) { setPlaying(false); return; }
+        if (v.ended) {
+          setPlaying(false);
+          return;
+        }
       } else {
         const dt = (tm - last) / 1000;
         last = tm;
@@ -73,18 +82,25 @@ export default function App() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(raf); if (v) v.pause(); };
+    return () => {
+      cancelAnimationFrame(raf);
+      if (v) v.pause();
+    };
   }, [playing, dur, videoUrl]);
 
   useEffect(() => {
+    // 播到片尾自停:自走时钟在 tick 里夹住了 now,这里补上「停播」这个状态转移
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载/播放尾部的正常状态收尾,不会级联
     if (playing && dur > 0 && now >= dur) setPlaying(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, dur, playing]);
 
   /* 绑定垫底视频元素(Stage 里渲染的那个) */
   useEffect(() => {
     const el = document.querySelector<HTMLVideoElement>(".fd-backdrop");
-    if (el) { videoRef.current = el; el.currentTime = nowRef.current; }
+    if (el) {
+      videoRef.current = el;
+      el.currentTime = nowRef.current;
+    }
   }, [videoUrl]);
 
   /* 挂载恢复:上次自动存档的编排 + 垫底视频(服务器路径,刷新不丢) */
@@ -93,15 +109,16 @@ export default function App() {
       const raw = localStorage.getItem(AUTOSAVE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
+      /* eslint-disable react-hooks/set-state-in-effect -- 挂载时一次性恢复存档 */
       if (saved?.doc?.cards?.length) setDoc(saved.doc);
       if (saved?.videoServerSide && typeof saved.videoUrl === "string" && saved.videoUrl.startsWith("/_media/")) {
         setVideoUrl(saved.videoUrl);
         setVideoServerSide(true);
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
       /* 坏存档直接忽略 */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const seek = (t: number) => {
@@ -115,8 +132,10 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable) return;
-      if (e.code === "Space") { e.preventDefault(); setPlaying((p) => !p); }
-      else if ((e.code === "Delete" || e.code === "Backspace") && selId) {
+      if (e.code === "Space") {
+        e.preventDefault();
+        setPlaying((p) => !p);
+      } else if ((e.code === "Delete" || e.code === "Backspace") && selId) {
         e.preventDefault();
         setDoc((d) => (d ? { ...d, cards: d.cards.filter((c) => c.id !== selId) } : d));
         setSelId(null);
@@ -132,7 +151,10 @@ export default function App() {
   const importJson = async (f: File | null) => {
     if (!f) return;
     const r = parseDoc(await f.text());
-    if (!r.doc) { alert(`导入失败:${r.error}`); return; }
+    if (!r.doc) {
+      alert(`导入失败:${r.error}`);
+      return;
+    }
     if (r.dropped?.length) alert(`跳过 ${r.dropped.map((d) => `${d.kind}×${d.n}`).join(", ")} —— 不是本库的卡或时间非法`);
     setDoc(r.doc);
     setSelId(r.doc.cards[0]?.id ?? null);
@@ -159,7 +181,11 @@ export default function App() {
   };
 
   const addCard = (kind: string) => {
-    const card = newCard(kind, Math.round(now * 10) / 10, cards.map((c) => c.id));
+    const card = newCard(
+      kind,
+      Math.round(now * 10) / 10,
+      cards.map((c) => c.id),
+    );
     setDoc((d) => (d ? { ...d, cards: [...d.cards, card].sort((a, b) => a.start - b.start) } : { fmt: "fxdeck/1", theme: "dark", cards: [card] }));
     setSelId(card.id);
     setLeftView("list");
@@ -194,10 +220,15 @@ export default function App() {
     const ns = Math.max(0, d.start + dt);
     patchSel({ id: d.id, start: ns, end: ns + (d.end - d.start) } as Partial<DocCard>);
   };
-  const onBlockUp = () => { drag.current = null; };
+  const onBlockUp = () => {
+    drag.current = null;
+  };
 
   const exportMov = async () => {
-    if (!doc || !doc.cards.length) { alert("时间轴上还没有卡片"); return; }
+    if (!doc || !doc.cards.length) {
+      alert("时间轴上还没有卡片");
+      return;
+    }
     if (busy) return;
     setBusy(true);
     const end = Math.max(...doc.cards.map((c) => c.end));
@@ -220,9 +251,18 @@ export default function App() {
   /* 成片 = 垫底视频 + 动效层 + 原声,一次出可发布的 MP4。
      时长:卡结束与原片时长取小者(层播完就用 eof_action 保留原片,不白渲) */
   const exportFinal = async () => {
-    if (!doc || !doc.cards.length) { alert("时间轴上还没有卡片"); return; }
-    if (!videoUrl) { alert("成片需要口播原片:先点「🎞 垫底视频」导入"); return; }
-    if (!videoServerSide) { alert("当前垫底视频是临时模式(服务落盘失败过),请重新导入一次再导成片"); return; }
+    if (!doc || !doc.cards.length) {
+      alert("时间轴上还没有卡片");
+      return;
+    }
+    if (!videoUrl) {
+      alert("成片需要口播原片:先点「🎞 垫底视频」导入");
+      return;
+    }
+    if (!videoServerSide) {
+      alert("当前垫底视频是临时模式(服务落盘失败过),请重新导入一次再导成片");
+      return;
+    }
     if (busy) return;
     setBusy(true);
     const end = Math.max(...doc.cards.map((c) => c.end));
@@ -276,7 +316,10 @@ export default function App() {
     const laneOf = new Map<string, number>();
     for (const c of cards) {
       let li = laneEnds.findIndex((e) => e <= c.start + 1e-9);
-      if (li === -1) { li = laneEnds.length; laneEnds.push(0); }
+      if (li === -1) {
+        li = laneEnds.length;
+        laneEnds.push(0);
+      }
       laneEnds[li] = c.end;
       laneOf.set(c.id, li);
     }
@@ -288,31 +331,69 @@ export default function App() {
     <div className="fd-app">
       {/* 顶栏:品牌 + 工程动作(剪映式:动作集中右上) */}
       <header className="fd-top">
-        <div className="fd-brand">FX<span>DECK</span><i>动效卡座 · v0.1</i></div>
+        <div className="fd-brand">
+          FX<span>DECK</span>
+          <i>动效卡座 · v0.1</i>
+        </div>
         <span className="fd-flex" />
         <button onClick={() => fileRef.current?.click()}>📥 导入 JSON</button>
         <input ref={fileRef} type="file" accept=".json" hidden onChange={(e) => importJson(e.target.files?.[0] ?? null)} />
         <button onClick={loadDemo}>🎬 示例</button>
-        <button onClick={exportJson} disabled={!doc}>📤 存 JSON</button>
-        <label className="fd-btn-file">🎞 垫底视频<input type="file" accept="video/*" hidden onChange={(e) => {
-          handleVideo(e.target.files?.[0] ?? null);
-          e.target.value = "";
-        }} /></label>
-        {videoUrl ? <button onClick={() => { setVideoUrl(null); setVideoServerSide(false); setVideoDur(0); }}>✕</button> : null}
-        <button onClick={exportMov} disabled={busy}>⬆ 导出透明层</button>
-        <button className="fd-primary" onClick={exportFinal} disabled={busy || !videoUrl} title={videoUrl ? "口播原片 + 动效层 + 原声,一条 MP4" : "先导入垫底视频"}>{busy ? "导出中…" : "🎬 导出成片"}</button>
+        <button onClick={exportJson} disabled={!doc}>
+          📤 存 JSON
+        </button>
+        <label className="fd-btn-file">
+          🎞 垫底视频
+          <input
+            type="file"
+            accept="video/*"
+            hidden
+            onChange={(e) => {
+              handleVideo(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {videoUrl ? (
+          <button
+            onClick={() => {
+              setVideoUrl(null);
+              setVideoServerSide(false);
+              setVideoDur(0);
+            }}
+          >
+            ✕
+          </button>
+        ) : null}
+        <button onClick={exportMov} disabled={busy}>
+          ⬆ 导出透明层
+        </button>
+        <button
+          className="fd-primary"
+          onClick={exportFinal}
+          disabled={busy || !videoUrl}
+          title={videoUrl ? "口播原片 + 动效层 + 原声,一条 MP4" : "先导入垫底视频"}
+        >
+          {busy ? "导出中…" : "🎬 导出成片"}
+        </button>
       </header>
 
       <div className="fd-body">
         {/* 左:图标栏 + 面板 */}
         <nav className="fd-rail">
-          <button className={leftView === "lib" ? "is-on" : ""} title="卡片库" onClick={() => setLeftView("lib")}>▦</button>
-          <button className={leftView === "list" ? "is-on" : ""} title="已加卡片" onClick={() => setLeftView("list")}>☰</button>
+          <button className={leftView === "lib" ? "is-on" : ""} title="卡片库" onClick={() => setLeftView("lib")}>
+            ▦
+          </button>
+          <button className={leftView === "list" ? "is-on" : ""} title="已加卡片" onClick={() => setLeftView("list")}>
+            ☰
+          </button>
         </nav>
         <aside className="fd-left">
           {leftView === "lib" ? (
             <>
-              <div className="fd-panel-title">卡片库<span>{CARDS.length}</span></div>
+              <div className="fd-panel-title">
+                卡片库<span>{CARDS.length}</span>
+              </div>
               <div className="fd-lib">
                 {kinds.map((k) => (
                   <button key={k.kind} className="fd-libcard" onClick={() => setPreviewKind(k.kind)} title="点击预览动效">
@@ -325,16 +406,33 @@ export default function App() {
             </>
           ) : (
             <>
-              <div className="fd-panel-title">已加卡片<span>{cards.length}</span></div>
+              <div className="fd-panel-title">
+                已加卡片<span>{cards.length}</span>
+              </div>
               <div className="fd-list">
                 {cards.map((c, i) => (
-                  <button key={c.id} className={"fd-item" + (c.id === selId ? " is-on" : "")} onClick={() => { setSelId(c.id); seek(c.start + 0.05); }}>
+                  <button
+                    key={c.id}
+                    className={"fd-item" + (c.id === selId ? " is-on" : "")}
+                    onClick={() => {
+                      setSelId(c.id);
+                      seek(c.start + 0.05);
+                    }}
+                  >
                     <b>{String(i + 1).padStart(2, "0")}</b>
                     <span>{byKind(c.kind)?.name ?? c.kind}</span>
-                    <time>{c.start.toFixed(1)}–{c.end.toFixed(1)}</time>
+                    <time>
+                      {c.start.toFixed(1)}–{c.end.toFixed(1)}
+                    </time>
                   </button>
                 ))}
-                {!cards.length && <div className="fd-empty">还没有卡片<br />去「卡片库」加,或导入 JSON</div>}
+                {!cards.length && (
+                  <div className="fd-empty">
+                    还没有卡片
+                    <br />
+                    去「卡片库」加,或导入 JSON
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -347,19 +445,28 @@ export default function App() {
             now={now}
             selId={selId}
             onPick={setSelId}
-            onMove={(id, offX, offY) => setDoc((d) =>
-              d ? { ...d, cards: d.cards.map((c) => (c.id === id ? { ...c, params: { ...c.params, offX, offY } } : c)) } : d,
-            )}
+            onMove={(id, offX, offY) =>
+              setDoc((d) => (d ? { ...d, cards: d.cards.map((c) => (c.id === id ? { ...c, params: { ...c.params, offX, offY } } : c)) } : d))
+            }
             videoUrl={videoUrl}
             videoMuted
             onVideoMeta={setVideoDur}
           />
           <div className="fd-transport">
-            <span className="fd-tc">{fmtTime(now)}<i> / {fmtTime(dur)}</i></span>
+            <span className="fd-tc">
+              {fmtTime(now)}
+              <i> / {fmtTime(dur)}</i>
+            </span>
             <span className="fd-flex" />
-            <button title="后退 0.5s(←)" onClick={() => seek(now - 0.5)}>⏮</button>
-            <button className="fd-play" title="播放/暂停(空格)" onClick={() => setPlaying((p) => !p)}>{playing ? "⏸" : "▶"}</button>
-            <button title="前进 0.5s(→)" onClick={() => seek(now + 0.5)}>⏭</button>
+            <button title="后退 0.5s(←)" onClick={() => seek(now - 0.5)}>
+              ⏮
+            </button>
+            <button className="fd-play" title="播放/暂停(空格)" onClick={() => setPlaying((p) => !p)}>
+              {playing ? "⏸" : "▶"}
+            </button>
+            <button title="前进 0.5s(→)" onClick={() => seek(now + 0.5)}>
+              ⏭
+            </button>
             <span className="fd-flex" />
             <span className="fd-count">{cards.length} 卡</span>
           </div>
@@ -368,61 +475,135 @@ export default function App() {
         {/* 右:检查器(分区) */}
         <aside className="fd-inspector">
           {!sel ? (
-            <div className="fd-empty">选中卡片编辑参数<br />画布点卡,或左侧列表选</div>
+            <div className="fd-empty">
+              选中卡片编辑参数
+              <br />
+              画布点卡,或左侧列表选
+            </div>
           ) : (
             <>
               <div className="fd-insp-head">
                 <b>{byKind(sel.kind)?.name}</b>
-                <select value={sel.kind} title="换卡(文字重填)" onChange={(e) => patchSel({ kind: e.target.value, params: { ...byKind(e.target.value)!.defaults } })}>
-                  {kinds.map((k) => <option key={k.kind} value={k.kind}>{k.name}</option>)}
+                <select
+                  value={sel.kind}
+                  title="换卡(文字重填)"
+                  onChange={(e) => patchSel({ kind: e.target.value, params: { ...byKind(e.target.value)!.defaults } })}
+                >
+                  {kinds.map((k) => (
+                    <option key={k.kind} value={k.kind}>
+                      {k.name}
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="fd-sec"><span>内容</span></div>
+              <div className="fd-sec">
+                <span>内容</span>
+              </div>
               <div className="fd-ctrls">
                 {contentCtrls.map((ct) => (
                   <label key={ct.k} className="fd-ctrl">
                     <span>{ct.label}</span>
                     {ct.type === "text" && <input value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)} />}
-                    {ct.type === "textarea" && <textarea rows={ct.rows ?? 3} value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)} />}
+                    {ct.type === "textarea" && (
+                      <textarea rows={ct.rows ?? 3} value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)} />
+                    )}
                     {ct.type === "select" && (
                       <select value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)}>
-                        {ct.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {ct.options.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
                     )}
                     {ct.type === "range" && (
                       <>
-                        <input type="range" min={ct.min} max={ct.max} step={ct.step} value={sel.params[ct.k] ?? ct.min} onChange={(e) => patchParam(ct.k, +e.target.value)} />
-                        <output>{String(sel.params[ct.k] ?? "")}{ct.unit ?? ""}</output>
+                        <input
+                          type="range"
+                          min={ct.min}
+                          max={ct.max}
+                          step={ct.step}
+                          value={sel.params[ct.k] ?? ct.min}
+                          onChange={(e) => patchParam(ct.k, +e.target.value)}
+                        />
+                        <output>
+                          {String(sel.params[ct.k] ?? "")}
+                          {ct.unit ?? ""}
+                        </output>
                       </>
                     )}
                   </label>
                 ))}
               </div>
-              <div className="fd-sec"><span>时间</span></div>
+              <div className="fd-sec">
+                <span>时间</span>
+              </div>
               <div className="fd-time-row">
-                <label>开始<input type="number" step="0.1" value={sel.start} onChange={(e) => { const v = +e.target.value; if (v < sel.end) patchSel({ start: v }); }} /></label>
-                <label>结束<input type="number" step="0.1" value={sel.end} onChange={(e) => { const v = +e.target.value; if (v > sel.start) patchSel({ end: v }); }} /></label>
+                <label>
+                  开始
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={sel.start}
+                    onChange={(e) => {
+                      const v = +e.target.value;
+                      if (v < sel.end) patchSel({ start: v });
+                    }}
+                  />
+                </label>
+                <label>
+                  结束
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={sel.end}
+                    onChange={(e) => {
+                      const v = +e.target.value;
+                      if (v > sel.start) patchSel({ end: v });
+                    }}
+                  />
+                </label>
               </div>
-              <div className="fd-sec"><span>位置与强调</span></div>
+              <div className="fd-sec">
+                <span>位置与强调</span>
+              </div>
               <div className="fd-ctrls">
-                {(byKind(sel.kind)?.ctrls ?? []).filter((c) => ["pos", "acc", "offX", "offY"].includes(c.k)).map((ct) => (
-                  <label key={ct.k} className="fd-ctrl">
-                    <span>{ct.label}</span>
-                    {ct.type === "select" && (
-                      <select value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)}>
-                        {ct.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                    )}
-                    {ct.type === "range" && (
-                      <>
-                        <input type="range" min={ct.min} max={ct.max} step={ct.step} value={sel.params[ct.k] ?? ct.min} onChange={(e) => patchParam(ct.k, +e.target.value)} />
-                        <output>{String(sel.params[ct.k] ?? "")}{ct.unit ?? ""}</output>
-                      </>
-                    )}
-                  </label>
-                ))}
+                {(byKind(sel.kind)?.ctrls ?? [])
+                  .filter((c) => ["pos", "acc", "offX", "offY"].includes(c.k))
+                  .map((ct) => (
+                    <label key={ct.k} className="fd-ctrl">
+                      <span>{ct.label}</span>
+                      {ct.type === "select" && (
+                        <select value={sel.params[ct.k] ?? ""} onChange={(e) => patchParam(ct.k, e.target.value)}>
+                          {ct.options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {ct.type === "range" && (
+                        <>
+                          <input
+                            type="range"
+                            min={ct.min}
+                            max={ct.max}
+                            step={ct.step}
+                            value={sel.params[ct.k] ?? ct.min}
+                            onChange={(e) => patchParam(ct.k, +e.target.value)}
+                          />
+                          <output>
+                            {String(sel.params[ct.k] ?? "")}
+                            {ct.unit ?? ""}
+                          </output>
+                        </>
+                      )}
+                    </label>
+                  ))}
               </div>
-              <button className="fd-del" onClick={() => removeCard(sel.id)}>🗑 删除这张卡</button>
+              <button className="fd-del" onClick={() => removeCard(sel.id)}>
+                🗑 删除这张卡
+              </button>
             </>
           )}
         </aside>
@@ -431,23 +612,34 @@ export default function App() {
       {/* 底部:时间轴工具条 + 刻度 + 轨道 */}
       <div className="fd-tlbar">
         <span className="fd-tl-title">时间轴</span>
-        <button title="缩小" onClick={() => setPps((p) => Math.max(24, p - 16))}>−</button>
+        <button title="缩小" onClick={() => setPps((p) => Math.max(24, p - 16))}>
+          −
+        </button>
         <input type="range" min={24} max={240} value={pps} onChange={(e) => setPps(+e.target.value)} />
-        <button title="放大" onClick={() => setPps((p) => Math.min(240, p + 16))}>＋</button>
+        <button title="放大" onClick={() => setPps((p) => Math.min(240, p + 16))}>
+          ＋
+        </button>
         <span className="fd-zoom-val">{pps}px/s</span>
         <span className="fd-flex" />
-        <button disabled={!sel} onClick={() => sel && removeCard(sel.id)}>🗑 删除选中</button>
+        <button disabled={!sel} onClick={() => sel && removeCard(sel.id)}>
+          🗑 删除选中
+        </button>
       </div>
       <div className="fd-timeline">
-        <div className="fd-tl-scroll" onPointerDown={(e) => {
-          const el = e.currentTarget as HTMLElement;
-          const r = el.getBoundingClientRect();
-          seek((e.clientX - r.left + el.scrollLeft) / pps);
-        }}>
+        <div
+          className="fd-tl-scroll"
+          onPointerDown={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            const r = el.getBoundingClientRect();
+            seek((e.clientX - r.left + el.scrollLeft) / pps);
+          }}
+        >
           <div className="fd-tl-inner" style={{ width: tlWidth }}>
             <div className="fd-ruler">
               {Array.from({ length: Math.ceil(tlWidth / (pps * 2)) + 1 }, (_, i) => (
-                <span key={i} style={{ left: i * 2 * pps }}>{i * 2}s</span>
+                <span key={i} style={{ left: i * 2 * pps }}>
+                  {i * 2}s
+                </span>
               ))}
             </div>
             <div className="fd-track" style={{ height: lanes.n * LANE_H + 12 }}>
@@ -475,10 +667,12 @@ export default function App() {
         <CardPreview
           kind={previewKind}
           onClose={() => setPreviewKind(null)}
-          onAdd={() => { addCard(previewKind); setPreviewKind(null); }}
+          onAdd={() => {
+            addCard(previewKind);
+            setPreviewKind(null);
+          }}
         />
       )}
     </div>
   );
 }
-

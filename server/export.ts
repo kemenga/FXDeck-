@@ -19,8 +19,16 @@ export function fxExport(): Plugin {
         res.end(JSON.stringify(prog));
       });
       server.middlewares.use("/api/export", (req, res) => {
-        if (req.method !== "POST") { res.statusCode = 405; res.end(); return; }
-        if (prog.running) { res.statusCode = 429; res.end(JSON.stringify({ ok: false, error: "已有导出任务在跑" })); return; }
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+        if (prog.running) {
+          res.statusCode = 429;
+          res.end(JSON.stringify({ ok: false, error: "已有导出任务在跑" }));
+          return;
+        }
         let body = "";
         req.on("data", (c) => (body += c));
         req.on("end", () => {
@@ -50,17 +58,27 @@ export function fxExport(): Plugin {
             let err = "";
             // 看门狗:任何输出都续命;10 分钟静默按假死强停,避免 busy 卡死
             let idle = setTimeout(() => child.kill("SIGKILL"), 10 * 60_000);
-            const kick = () => { clearTimeout(idle); idle = setTimeout(() => child.kill("SIGKILL"), 10 * 60_000); };
+            const kick = () => {
+              clearTimeout(idle);
+              idle = setTimeout(() => child.kill("SIGKILL"), 10 * 60_000);
+            };
             child.stdout.on("data", (d) => {
               kick();
               out += d;
               process.stdout.write(`[export] ${d}`);
               const m = [...out.matchAll(/progress (\d+)\/(\d+)/g)].pop();
-              if (m) { prog.frame = +m[1]; prog.total = +m[2]; prog.stage = "render"; }
+              if (m) {
+                prog.frame = +m[1];
+                prog.total = +m[2];
+                prog.stage = "render";
+              }
               if (out.includes("composing mov")) prog.stage = "mov";
               if (out.includes("composing webm")) prog.stage = "webm";
             });
-            child.stderr.on("data", (d) => { kick(); err += d; });
+            child.stderr.on("data", (d) => {
+              kick();
+              err += d;
+            });
             child.on("close", (code) => {
               clearTimeout(idle);
               prog = { ...prog, running: false, stage: "done" };
@@ -72,7 +90,11 @@ export function fxExport(): Plugin {
                 res.statusCode = 500;
                 res.end(JSON.stringify({ ok: false, error: (err || out).slice(-900) }));
               }
-              try { fs.rmSync(path.dirname(jobFile), { recursive: true, force: true }); } catch { /* 留着无妨 */ }
+              try {
+                fs.rmSync(path.dirname(jobFile), { recursive: true, force: true });
+              } catch {
+                /* 留着无妨 */
+              }
             });
           } catch (e) {
             prog.running = false;

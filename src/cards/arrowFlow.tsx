@@ -24,7 +24,18 @@ const def: CardDef<any> = {
           return (
             <div key={i} style={{ display: "flex", alignItems: "center" }}>
               {i > 0 ? (
-                <svg width="72" height="22" viewBox="0 0 72 22" style={{ margin: "0 12px", flex: "none", transform: `scaleX(${arrow.toFixed(3)})`, transformOrigin: "left center", opacity: arrow > 0.02 ? 1 : 0 }}>
+                <svg
+                  width="72"
+                  height="22"
+                  viewBox="0 0 72 22"
+                  style={{
+                    margin: "0 12px",
+                    flex: "none",
+                    transform: `scaleX(${arrow.toFixed(3)})`,
+                    transformOrigin: "left center",
+                    opacity: arrow > 0.02 ? 1 : 0,
+                  }}
+                >
                   <line x1="0" y1="11" x2="58" y2="11" stroke="var(--acc)" strokeWidth="4" strokeLinecap="round" />
                   <path d="M56 3 L70 11 L56 19 Z" fill="var(--acc)" />
                 </svg>

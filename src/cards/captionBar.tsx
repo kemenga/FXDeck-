@@ -13,10 +13,7 @@ const def: CardDef<any> = {
     offX: 0,
     offY: 0,
   },
-  ctrls: [
-    { k: "lines", label: "字幕行(每行 起始-结束 文本)", type: "textarea", rows: 6 },
-    ...COMMON_CTRLS,
-  ],
+  ctrls: [{ k: "lines", label: "字幕行(每行 起始-结束 文本)", type: "textarea", rows: 6 }, ...COMMON_CTRLS],
   render: ({ p, t, at }) => {
     const rows = String(p.lines || "")
       .split("\n")

@@ -17,7 +17,9 @@ export function mediaUpload(): Plugin {
         try {
           const raw = String(req.headers["x-filename"] ?? "video.mp4");
           // 只留安全字符,防路径穿越;中文保留
-          const safe = decodeURIComponent(raw).replace(/[^\w.\-\u4e00-\u9fff]/g, "_").slice(-80);
+          const safe = decodeURIComponent(raw)
+            .replace(/[^\w.\-\u4e00-\u9fff]/g, "_")
+            .slice(-80);
           const dir = path.join(server.config.root, "public", "_media");
           fs.mkdirSync(dir, { recursive: true });
           const dest = path.join(dir, safe);

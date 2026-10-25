@@ -26,7 +26,16 @@ const def: CardDef<any> = {
           return (
             <div key={i} style={{ display: "flex", alignItems: "center" }}>
               {i > 0 ? (
-                <div style={{ width: 46, height: 2, borderRadius: 1, background: on ? "var(--acc)" : "rgba(255,255,255,.14)", margin: "0 10px", transition: "none" }} />
+                <div
+                  style={{
+                    width: 46,
+                    height: 2,
+                    borderRadius: 1,
+                    background: on ? "var(--acc)" : "rgba(255,255,255,.14)",
+                    margin: "0 10px",
+                    transition: "none",
+                  }}
+                />
               ) : null}
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <span

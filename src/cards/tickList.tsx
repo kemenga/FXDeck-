@@ -20,14 +20,22 @@ const def: CardDef<any> = {
     const en = enter(t);
     return (
       <div className="glass" style={{ ...FONT, minWidth: 460, maxWidth: 780, padding: "30px 36px" }}>
-        {p.title ? (
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f4f7fa", marginBottom: 16, opacity: en }}>{String(p.title)}</div>
-        ) : null}
+        {p.title ? <div style={{ fontSize: 30, fontWeight: 800, color: "#f4f7fa", marginBottom: 16, opacity: en }}>{String(p.title)}</div> : null}
         {items.map((it, i) => {
           const pr = item(t, i, step);
           const tick = easeOut3((t - (0.4 + i * step)) / 0.3);
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0", opacity: pr, transform: `translateX(${((1 - pr) * -22).toFixed(1)}px)` }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                padding: "10px 0",
+                opacity: pr,
+                transform: `translateX(${((1 - pr) * -22).toFixed(1)}px)`,
+              }}
+            >
               <span
                 style={{
                   flex: "none",
@@ -42,7 +50,15 @@ const def: CardDef<any> = {
                 }}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20">
-                  <path d="M4 10.5 8.2 14.5 16 5.5" fill="none" stroke="#0b0f14" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" opacity={tick} />
+                  <path
+                    d="M4 10.5 8.2 14.5 16 5.5"
+                    fill="none"
+                    stroke="#0b0f14"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={tick}
+                  />
                 </svg>
               </span>
               <span style={{ fontSize: 32, fontWeight: 650, color: "#f4f7fa", opacity: tick > 0.5 ? 1 : 0.82 }}>{it}</span>

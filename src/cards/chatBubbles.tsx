@@ -21,7 +21,10 @@ const def: CardDef<any> = {
     ...COMMON_CTRLS,
   ],
   render: ({ p, t }) => {
-    const rows = String(p.lines || "").split("\n").map((s) => s.trim()).filter(Boolean);
+    const rows = String(p.lines || "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const step = Math.max(0.25, (Number(p.stepMs) || 1100) / 1000);
     return (
       <div style={{ ...FONT, display: "flex", flexDirection: "column", gap: 14, width: 760 }}>

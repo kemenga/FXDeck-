@@ -15,16 +15,13 @@ export const easeOutBack = (p: number) => {
 export const enter = (t: number, delay = 0.05, dur = 0.4) => easeOut3((t - delay) / dur);
 
 /** 逐条进场:第 i 条在 delay + i*step 时出发 */
-export const item = (t: number, i: number, step: number, dur = 0.45, delay = 0.2) =>
-  easeOut3((t - (delay + i * step)) / dur);
+export const item = (t: number, i: number, step: number, dur = 0.45, delay = 0.2) => easeOut3((t - (delay + i * step)) / dur);
 
 /** 退场(0→1):dur 已知时,最后 out 秒淡出+轻微下移;dur 未知恒 0 */
-export const outro = (t: number, dur: number, out = 0.3) =>
-  dur > 0 ? clamp01((t - (dur - out)) / out) : 0;
+export const outro = (t: number, dur: number, out = 0.3) => (dur > 0 ? clamp01((t - (dur - out)) / out) : 0);
 
 /** 数字滚动:0→value,从 delay 起 grow 秒滚完 */
-export const count = (t: number, value: number, delay = 0.25, grow = 1.2) =>
-  Math.round(value * easeOutExpo((t - delay) / grow));
+export const count = (t: number, value: number, delay = 0.25, grow = 1.2) => Math.round(value * easeOutExpo((t - delay) / grow));
 
 export const fmtTime = (s: number) => {
   const m = Math.floor(s / 60);

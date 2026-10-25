@@ -33,9 +33,7 @@ const def: CardDef<any> = {
           </span>
           {p.unit ? <span style={{ fontSize: 46, fontWeight: 800, color: "var(--acc)" }}>{String(p.unit)}</span> : null}
         </div>
-        {p.note ? (
-          <div style={{ fontSize: 27, color: "rgba(244,247,250,.66)", marginTop: 14, opacity: tick }}>{String(p.note)}</div>
-        ) : null}
+        {p.note ? <div style={{ fontSize: 27, color: "rgba(244,247,250,.66)", marginTop: 14, opacity: tick }}>{String(p.note)}</div> : null}
       </div>
     );
   },

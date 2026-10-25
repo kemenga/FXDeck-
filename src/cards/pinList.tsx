@@ -20,15 +20,21 @@ const def: CardDef<any> = {
     const en = enter(t);
     return (
       <div className="glass" style={{ ...FONT, minWidth: 460, maxWidth: 780, padding: "30px 36px" }}>
-        {p.title ? (
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f4f7fa", marginBottom: 16, opacity: en }}>
-            {String(p.title)}
-          </div>
-        ) : null}
+        {p.title ? <div style={{ fontSize: 30, fontWeight: 800, color: "#f4f7fa", marginBottom: 16, opacity: en }}>{String(p.title)}</div> : null}
         {items.map((it, i) => {
           const pr = item(t, i, step);
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0", opacity: pr, transform: `translateX(${((1 - pr) * -22).toFixed(1)}px)` }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 16,
+                padding: "10px 0",
+                opacity: pr,
+                transform: `translateX(${((1 - pr) * -22).toFixed(1)}px)`,
+              }}
+            >
               <span
                 style={{
                   flex: "none",

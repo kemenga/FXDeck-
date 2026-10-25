@@ -10,9 +10,7 @@ import puppeteer from "puppeteer";
 // Chrome 内核缓存未配置时给出人话提示(而不是一屏堆栈)
 if (!process.env.PUPPETEER_CACHE_DIR && !fs.existsSync(path.join(process.env.USERPROFILE ?? "~", ".cache", "puppeteer"))) {
   console.error(
-    "找不到无头浏览器内核。设好缓存目录再跑:\n" +
-      "  set PUPPETEER_CACHE_DIR=<chrome缓存目录>\n" +
-      "或装一份:npx puppeteer browsers install chrome",
+    "找不到无头浏览器内核。设好缓存目录再跑:\n" + "  set PUPPETEER_CACHE_DIR=<chrome缓存目录>\n" + "或装一份:npx puppeteer browsers install chrome",
   );
   process.exit(1);
 }
@@ -28,9 +26,7 @@ const doc = job.doc?.cards ? job.doc : job.fmt === "fxdeck/1" ? job : null;
 const base = job.base;
 const fps = job.fps ?? 30000 / 1001;
 // 时长优先用调用方给的;没给就从编排里推导(末卡结束 + 0.4s 收尾)——别信调用方一定给对
-const duration =
-  job.duration ??
-  (doc?.cards?.length ? Math.max(...doc.cards.map((c) => c.end)) + 0.4 : 0);
+const duration = job.duration ?? (doc?.cards?.length ? Math.max(...doc.cards.map((c) => c.end)) + 0.4 : 0);
 if (!doc || !duration) {
   console.error("job 缺 doc 或推不出时长");
   process.exit(1);
@@ -104,21 +100,45 @@ try {
   if (job.final && job.videoPath) {
     console.log("composing final mp4");
     await run("ffmpeg", [
-      "-y", "-i", job.videoPath,
-      "-framerate", String(fps), "-i", path.join(outDir, "f%05d.png"),
+      "-y",
+      "-i",
+      job.videoPath,
+      "-framerate",
+      String(fps),
+      "-i",
+      path.join(outDir, "f%05d.png"),
       // 透明层叠到原片;层播完后保留原片(eof_action=pass);宽高取偶(H.264 要求)
       "-filter_complex",
       "[1:v]format=rgba[ov];[0:v][ov]overlay=0:0:eof_action=pass:format=auto,scale=trunc(iw/2)*2:trunc(ih/2)*2",
-      "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p",
-      "-c:a", "aac", "-b:a", "192k",
+      "-c:v",
+      "libx264",
+      "-crf",
+      "18",
+      "-preset",
+      "medium",
+      "-pix_fmt",
+      "yuv420p",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
       path.join(outDir, "final.mp4"),
     ]);
     console.log(JSON.stringify({ ok: true, final: path.join(outDir, "final.mp4"), dir: outDir, frames }));
   } else {
     console.log("composing mov");
     await run("ffmpeg", [
-      "-y", "-framerate", String(fps), "-i", path.join(outDir, "f%05d.png"),
-      "-c:v", "prores_ks", "-profile:v", "4444", "-pix_fmt", "yuva444p10le",
+      "-y",
+      "-framerate",
+      String(fps),
+      "-i",
+      path.join(outDir, "f%05d.png"),
+      "-c:v",
+      "prores_ks",
+      "-profile:v",
+      "4444",
+      "-pix_fmt",
+      "yuva444p10le",
       path.join(outDir, "overlay.mov"),
     ]);
     // WebM 是可选备用格式(vp9 编码要几分钟),默认不导,job.webm = true 才要
@@ -126,9 +146,23 @@ try {
     if (job.webm) {
       console.log("composing webm");
       await run("ffmpeg", [
-        "-y", "-framerate", String(fps), "-i", path.join(outDir, "f%05d.png"),
-        "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "32",
-        "-deadline", "realtime", "-cpu-used", "5",
+        "-y",
+        "-framerate",
+        String(fps),
+        "-i",
+        path.join(outDir, "f%05d.png"),
+        "-c:v",
+        "libvpx-vp9",
+        "-pix_fmt",
+        "yuva420p",
+        "-b:v",
+        "0",
+        "-crf",
+        "32",
+        "-deadline",
+        "realtime",
+        "-cpu-used",
+        "5",
         path.join(outDir, "overlay.webm"),
       ]);
       webmPath = path.join(outDir, "overlay.webm");

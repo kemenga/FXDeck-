@@ -8,11 +8,7 @@ const def: CardDef<any> = {
   name: "荧光笔",
   desc: "划重点:大字浮现后,强调色块从左往右扫过文字",
   defaults: { text: "这一句就是重点", kicker: "划重点", pos: "center", acc: "amber", offX: 0, offY: 0 },
-  ctrls: [
-    { k: "kicker", label: "眉题(可空)", type: "text" },
-    { k: "text", label: "文字", type: "text" },
-    ...COMMON_CTRLS,
-  ],
+  ctrls: [{ k: "kicker", label: "眉题(可空)", type: "text" }, { k: "text", label: "文字", type: "text" }, ...COMMON_CTRLS],
   render: ({ p, t }) => {
     const txtIn = easeOut3((t - 0.15) / 0.5);
     const sweep = easeOut3((t - 0.6) / 0.55);

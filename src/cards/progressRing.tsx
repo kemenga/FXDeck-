@@ -32,7 +32,10 @@ const def: CardDef<any> = {
     const C = 2 * Math.PI * R;
     const en = enter(t);
     return (
-      <div className="glass" style={{ ...FONT, width: 360, padding: "26px 30px 30px", textAlign: "center", opacity: en, transform: `translateY(${((1 - en) * 20).toFixed(1)}px)` }}>
+      <div
+        className="glass"
+        style={{ ...FONT, width: 360, padding: "26px 30px 30px", textAlign: "center", opacity: en, transform: `translateY(${((1 - en) * 20).toFixed(1)}px)` }}
+      >
         {p.kicker ? (
           <div style={{ ...MONO, fontSize: 18, letterSpacing: "0.3em", fontWeight: 700, color: "var(--acc)" }}>{String(p.kicker).toUpperCase()}</div>
         ) : null}

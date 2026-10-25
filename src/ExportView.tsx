@@ -12,12 +12,16 @@ export function ExportView() {
     document.body.classList.add("fd-export");
     fetch("/api/job")
       .then((r) => r.json())
-      .then((d) => { if (d?.doc) setDoc(d.doc); })
+      .then((d) => {
+        if (d?.doc) setDoc(d.doc);
+      })
       .catch(() => {});
     // 常驻 rAF 循环:老 headless 的合成器没人请求帧就会休眠,之后的 DOM 更新
     // 永远到不了截图表面(实测:首帧之后全部拍到空白)。持续请求帧 = 表面永远新鲜
     let raf = 0;
-    const loop = () => { raf = requestAnimationFrame(loop); };
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
     // 对时:无头浏览器逐帧调用;过一帧(状态必已提交并画出)再 resolve
     (window as any).__fxSeek = (t: number) =>

@@ -14,10 +14,7 @@ const def: CardDef<any> = {
     offX: 0,
     offY: 0,
   },
-  ctrls: [
-    { k: "items", label: "指标(标签,数值,单位 | 分隔)", type: "textarea", rows: 2 },
-    ...COMMON_CTRLS,
-  ],
+  ctrls: [{ k: "items", label: "指标(标签,数值,单位 | 分隔)", type: "textarea", rows: 2 }, ...COMMON_CTRLS],
   render: ({ p, t }) => {
     const cells = String(p.items || "")
       .split("|")

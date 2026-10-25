@@ -29,7 +29,12 @@ const def: CardDef<any> = {
       .filter((r) => r.length >= 2)
       .map(([label, v]) => ({ label, v: Number(v) || 0 }));
     if (pts.length < 2) return null;
-    const W = 660, H = 340, L = 56, R = 120, T = 46, B = 56;
+    const W = 660,
+      H = 340,
+      L = 56,
+      R = 120,
+      T = 46,
+      B = 56;
     const max = Math.max(...pts.map((x) => x.v), 1);
     const xy = pts.map((pt, i) => ({
       x: L + (i * (W - L - R)) / (pts.length - 1),
@@ -43,17 +48,15 @@ const def: CardDef<any> = {
     return (
       <div className="glass" style={{ ...FONT, width: W + 40, padding: "26px 20px 18px", opacity: en }}>
         {p.kicker ? (
-          <div style={{ ...MONO, fontSize: 19, letterSpacing: "0.32em", fontWeight: 700, color: "var(--acc)", marginLeft: 36 }}>{String(p.kicker).toUpperCase()}</div>
+          <div style={{ ...MONO, fontSize: 19, letterSpacing: "0.32em", fontWeight: 700, color: "var(--acc)", marginLeft: 36 }}>
+            {String(p.kicker).toUpperCase()}
+          </div>
         ) : null}
         <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
           {/* 横轴基线 */}
           <line x1={L} y1={H - B} x2={W - R} y2={H - B} stroke="rgba(255,255,255,.14)" strokeWidth="2" />
           {/* 面积:随画线进度淡入 */}
-          <polygon
-            points={`${xy.map((q) => `${q.x},${q.y}`).join(" ")} ${W - R},${H - B} ${L},${H - B}`}
-            fill="var(--acc)"
-            opacity={0.1 * draw}
-          />
+          <polygon points={`${xy.map((q) => `${q.x},${q.y}`).join(" ")} ${W - R},${H - B} ${L},${H - B}`} fill="var(--acc)" opacity={0.1 * draw} />
           {/* 折线:dashoffset 从全长画到 0 */}
           <polyline
             points={xy.map((q) => `${q.x},${q.y}`).join(" ")}

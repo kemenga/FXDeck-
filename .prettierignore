@@ -1,0 +1,7 @@
+node_modules
+dist
+exports
+chrome
+chrome-headless-shell
+public/_media
+package-lock.json

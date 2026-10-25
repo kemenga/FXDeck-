@@ -7,13 +7,11 @@ const def: CardDef<any> = {
   name: "金句卡",
   desc: "多行金句逐行浮现,底部署名(可当来源行)",
   defaults: { quote: "收藏了|不等于学会了", author: "—— 某位博主", pos: "left", acc: "cyan", offX: 0, offY: 0 },
-  ctrls: [
-    { k: "quote", label: "金句(| 分行)", type: "textarea", rows: 2 },
-    { k: "author", label: "署名", type: "text" },
-    ...COMMON_CTRLS,
-  ],
+  ctrls: [{ k: "quote", label: "金句(| 分行)", type: "textarea", rows: 2 }, { k: "author", label: "署名", type: "text" }, ...COMMON_CTRLS],
   render: ({ p, t }) => {
-    const lines = String(p.quote || "").split("|").filter(Boolean);
+    const lines = String(p.quote || "")
+      .split("|")
+      .filter(Boolean);
     const en = enter(t);
     return (
       <div className="glass" style={{ maxWidth: 760, padding: "40px 46px 34px", fontFamily: "var(--deck-font)" }}>

@@ -41,11 +41,11 @@ const def: CardDef<any> = {
         }}
       >
         {p.en ? (
-          <div style={{ ...MONO, fontSize: 19, letterSpacing: "0.32em", fontWeight: 700, color: "var(--acc)", opacity: en }}>
-            {String(p.en).toUpperCase()}
-          </div>
+          <div style={{ ...MONO, fontSize: 19, letterSpacing: "0.32em", fontWeight: 700, color: "var(--acc)", opacity: en }}>{String(p.en).toUpperCase()}</div>
         ) : null}
-        <div style={{ fontSize: 56, fontWeight: 900, color: "#f4f7fa", marginTop: 8, opacity: term, transform: `translateY(${((1 - term) * 16).toFixed(1)}px)` }}>
+        <div
+          style={{ fontSize: 56, fontWeight: 900, color: "#f4f7fa", marginTop: 8, opacity: term, transform: `translateY(${((1 - term) * 16).toFixed(1)}px)` }}
+        >
           {String(p.term || "")}
         </div>
         {p.def ? (

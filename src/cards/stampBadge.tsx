@@ -8,11 +8,7 @@ const def: CardDef<any> = {
   name: "印章",
   desc: "盖判定:「亲测可用」「无效别学」。砸下回弹 + 冲击扩散环",
   defaults: { text: "亲测可用", sub: "2026.10 实测", pos: "right", acc: "cyan", offX: 0, offY: 0 },
-  ctrls: [
-    { k: "text", label: "印章文字(≤6字)", type: "text" },
-    { k: "sub", label: "小字(可空)", type: "text" },
-    ...COMMON_CTRLS,
-  ],
+  ctrls: [{ k: "text", label: "印章文字(≤6字)", type: "text" }, { k: "sub", label: "小字(可空)", type: "text" }, ...COMMON_CTRLS],
   render: ({ p, t }) => {
     const slam = easeOutBack((t - 0.15) / 0.38);
     const ring = easeOutExpo((t - 0.5) / 0.55);
@@ -49,7 +45,9 @@ const def: CardDef<any> = {
             boxShadow: "0 0 40px rgba(62,197,214,.25)",
           }}
         >
-          <span style={{ fontSize: 52, fontWeight: 900, color: "var(--acc)", letterSpacing: "0.06em", lineHeight: 1.2, textAlign: "center", padding: "0 12px" }}>
+          <span
+            style={{ fontSize: 52, fontWeight: 900, color: "var(--acc)", letterSpacing: "0.06em", lineHeight: 1.2, textAlign: "center", padding: "0 12px" }}
+          >
             {String(p.text || "")}
           </span>
           {p.sub ? (
