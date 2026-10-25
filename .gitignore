@@ -1,0 +1,13 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 运行时产物与本地数据(不入库)
+exports/
+public/_media/
+*.log
+debug.log
+
+# 无头浏览器内核(puppeteer 缓存,规范位置在 ~/.cache/puppeteer,见 README)
+chrome/
+chrome-headless-shell/

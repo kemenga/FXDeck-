@@ -1,0 +1,18 @@
+{
+  "fmt": "fxdeck/1",
+  "theme": "dark",
+  "cards": [
+    { "id": "c1", "kind": "hookText", "start": 0.4, "end": 4.5,
+      "params": { "text": "这条视频|*30秒*剪完", "staggerMs": 70, "pos": "center", "acc": "cyan" } },
+    { "id": "c2", "kind": "stepFlow", "start": 0, "end": 20,
+      "params": { "steps": "选题/录制/剪辑/发布", "stepMs": 4800, "pos": "top", "acc": "cyan" } },
+    { "id": "c3", "kind": "pinList", "start": 4.8, "end": 10.5,
+      "params": { "title": "为什么快", "items": "卡片库预制/只调不写/AI 挑卡对时", "stepMs": 1300, "pos": "left", "acc": "cyan" } },
+    { "id": "c4", "kind": "bigNumber", "start": 11, "end": 15.5,
+      "params": { "kicker": "SAVE TIME", "value": "70", "unit": "%", "note": "剪辑时间省下来", "pos": "right", "acc": "cyan" } },
+    { "id": "c5", "kind": "tickList", "start": 15.8, "end": 19.8,
+      "params": { "title": "上手三步", "items": "导入字幕/导入JSON/导出MOV", "stepMs": 900, "pos": "left", "acc": "cyan" } },
+    { "id": "c6", "kind": "quoteCard", "start": 20.2, "end": 26,
+      "params": { "quote": "工具替你动手|想法留给自己", "author": "—— FXDeck", "pos": "center", "acc": "cyan" } }
+  ]
+}
