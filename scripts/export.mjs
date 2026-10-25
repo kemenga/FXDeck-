@@ -36,7 +36,7 @@ if (!doc || !duration) {
   process.exit(1);
 }
 
-const outDir = path.resolve("exports", new Date().toISOString().replace(/[:T]/g, "-").slice(0, 17));
+const outDir = path.resolve("exports", new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19));
 fs.mkdirSync(outDir, { recursive: true });
 
 /** 跑一个外部命令,失败抛错 */
