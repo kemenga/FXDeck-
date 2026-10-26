@@ -234,6 +234,37 @@ export default function App() {
     drag.current = null;
   };
 
+  /* 播放头擦洗:抓住竖线/线头左右拖,画面与垫底视频跟手;拖动中暂停,松手恢复播放。
+     相对拖拽(抓住点不跳),范围夹在 0..dur */
+  const phDrag = useRef<{ x0: number; t0: number; wasPlaying: boolean } | null>(null);
+  const onPhDown = (e: React.PointerEvent) => {
+    e.stopPropagation(); // 别触发轨道的点击跳转
+    // 捕获指针保证快速拖出竖线也不断线;合成事件没有活动指针时会抛,不影响拖拽本身
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* 忽略 */
+    }
+    phDrag.current = { x0: e.clientX, t0: now, wasPlaying: playing };
+    if (playing) setPlaying(false);
+  };
+  const onPhMove = (e: React.PointerEvent) => {
+    const d = phDrag.current;
+    if (!d) return;
+    const t = d.t0 + (e.clientX - d.x0) / pps;
+    seek(dur > 0 ? Math.min(Math.max(0, t), dur) : Math.max(0, t));
+  };
+  const onPhUp = (e: React.PointerEvent) => {
+    const d = phDrag.current;
+    phDrag.current = null;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    } catch {
+      /* 合成事件没有活动指针 */
+    }
+    if (d?.wasPlaying) setPlaying(true);
+  };
+
   const exportMov = async () => {
     if (!doc || !doc.cards.length) {
       alert("时间轴上还没有卡片");
@@ -709,7 +740,15 @@ export default function App() {
                 <i>{tlDropTime.toFixed(1)}s</i>
               </div>
             )}
-            <div className="fd-ph" style={{ left: now * pps }} />
+            <div
+              className="fd-ph"
+              style={{ left: now * pps }}
+              onPointerDown={onPhDown}
+              onPointerMove={onPhMove}
+              onPointerUp={onPhUp}
+              onPointerCancel={onPhUp}
+              title="左右拖动擦洗预览;点击轨道任意处跳转"
+            />
           </div>
         </div>
       </div>

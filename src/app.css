@@ -641,7 +641,17 @@ button {
   width: 2px;
   background: var(--acc);
   z-index: 2;
-  pointer-events: none;
+  cursor: ew-resize;
+  touch-action: none;
+}
+/* 线头处扩大抓取热区:2px 竖线不好按,刻度区 ±8px 都能抓住(竖线本体全高可抓) */
+.fd-ph::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 24px;
+  left: -8px;
+  right: -8px;
 }
 .fd-ph::before {
   content: "";
