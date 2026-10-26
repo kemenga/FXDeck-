@@ -15,6 +15,22 @@ function rng(seed: number) {
   };
 }
 
+/** 点亮次序缓存:洗牌+排序按网格尺寸模块级复用 —— 渲染是逐帧纯函数,
+    上千格子每帧重排一次太浪费;固定种子保证同尺寸结果恒等,缓存不改变画面 */
+const RANK_CACHE = new Map<string, number[]>();
+function litOrder(cols: number, rows: number): number[] {
+  const key = `${cols}x${rows}`;
+  let rank = RANK_CACHE.get(key);
+  if (!rank) {
+    const order = rng(20260101);
+    rank = Array.from({ length: cols * rows }, (_, i) => ({ i, r: order() }))
+      .sort((a, b) => a.r - b.r)
+      .map((x) => x.i);
+    RANK_CACHE.set(key, rank);
+  }
+  return rank;
+}
+
 const def: CardDef<any> = {
   kind: "dotMatrix",
   name: "点阵矩阵",
@@ -44,11 +60,8 @@ const def: CardDef<any> = {
     const total = cols * rows;
     const ratio = Math.min(100, Math.max(0, Number(p.ratio) || 0));
     const lit = Math.round((total * ratio) / 100);
-    // 固定种子洗牌出点亮次序:同样的占比每次出现同一批格子
-    const order = rng(20260101);
-    const rank: number[] = Array.from({ length: total }, (_, i) => ({ i, r: order() }))
-      .sort((a, b) => a.r - b.r)
-      .map((x) => x.i);
+    // 固定种子洗牌出点亮次序(缓存):同样的占比每次出现同一批格子
+    const rank = litOrder(cols, rows);
     const litAt = new Map<number, number>();
     rank.forEach((cell, k) => litAt.set(cell, k < lit ? 0.35 + (k / Math.max(1, lit)) * 1.5 : Infinity));
     const size = 26;
