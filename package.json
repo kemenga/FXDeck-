@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check": "node scripts/check-env.mjs",
     "export-demo": "node scripts/export.mjs"
   },
   "dependencies": {

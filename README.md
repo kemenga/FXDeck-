@@ -5,6 +5,8 @@
 
 ## 快速开始
 
+> **换新电脑开发?看 [SETUP.md](SETUP.md)** —— 必装软件、内核安装、工作数据迁移、常见问题,一次说清。装完可 `npm run check` 一键体检。
+
 ```bash
 npm install        # Node >= 22
 npm run dev        # http://localhost:5188
