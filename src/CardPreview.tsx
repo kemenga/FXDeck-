@@ -8,6 +8,12 @@ const PREVIEW_DUR: Record<string, number> = {
   stepFlow: 13,
   terminalCard: 7,
   captionBar: 7,
+  countdownRing: 12,
+  dotMatrix: 6,
+  skillList: 6,
+  danmaku: 8,
+  triCompare: 8,
+  tileGrid: 6,
 };
 
 /** 卡片动效预览:默认参数跑一遍,循环播放;重放=重挂;加到播放头=落进时间轴 */

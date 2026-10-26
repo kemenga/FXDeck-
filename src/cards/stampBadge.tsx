@@ -6,15 +6,30 @@ import { FONT, MONO } from "./shared";
 const def: CardDef<any> = {
   kind: "stampBadge",
   name: "印章",
-  desc: "盖判定:「亲测可用」「无效别学」。砸下回弹 + 冲击扩散环",
-  defaults: { text: "亲测可用", sub: "2026.10 实测", pos: "right", acc: "cyan", offX: 0, offY: 0 },
-  ctrls: [{ k: "text", label: "印章文字(≤6字)", type: "text" }, { k: "sub", label: "小字(可空)", type: "text" }, ...COMMON_CTRLS],
+  desc: "盖判定:「亲测可用」「无效别学」。砸下回弹 + 冲击扩散环;shape=rect 是双线方框手绘章",
+  defaults: { text: "亲测可用", sub: "2026.10 实测", shape: "round", pos: "right", acc: "cyan", offX: 0, offY: 0 },
+  ctrls: [
+    { k: "text", label: "印章文字(≤6字)", type: "text" },
+    { k: "sub", label: "小字(可空)", type: "text" },
+    {
+      k: "shape",
+      label: "章形",
+      type: "select",
+      options: [
+        { label: "圆形", value: "round" },
+        { label: "方框(手绘)", value: "rect" },
+      ],
+    },
+    ...COMMON_CTRLS,
+  ],
   render: ({ p, t }) => {
     const slam = easeOutBack((t - 0.15) / 0.38);
     const ring = easeOutExpo((t - 0.5) / 0.55);
     // 落章后的余震:衰减正弦
     const shake = t > 0.53 ? Math.sin((t - 0.53) * 34) * Math.exp(-(t - 0.53) * 5) * 2.4 : 0;
-    const rot = -9 + shake;
+    const rect = String(p.shape ?? "round") === "rect";
+    // 方框章旋转更轻(手绘贴纸感),圆章保持 -9° 斜盖
+    const rot = (rect ? -4 : -9) + shake;
     return (
       <div style={{ ...FONT, position: "relative", width: 300, height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {/* 冲击扩散环 */}
@@ -34,8 +49,11 @@ const def: CardDef<any> = {
           style={{
             width: 250,
             height: 250,
-            borderRadius: "50%",
+            borderRadius: rect ? 28 : "50%",
             border: "6px solid var(--acc)",
+            // 方框章:内虚线第二笔,双线手绘章感
+            outline: rect ? "2.5px dashed var(--acc)" : undefined,
+            outlineOffset: rect ? -12 : undefined,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -46,7 +64,15 @@ const def: CardDef<any> = {
           }}
         >
           <span
-            style={{ fontSize: 52, fontWeight: 900, color: "var(--acc)", letterSpacing: "0.06em", lineHeight: 1.2, textAlign: "center", padding: "0 12px" }}
+            style={{
+              fontSize: rect ? 58 : 52,
+              fontWeight: 900,
+              color: "var(--acc)",
+              letterSpacing: "0.06em",
+              lineHeight: 1.2,
+              textAlign: "center",
+              padding: "0 12px",
+            }}
           >
             {String(p.text || "")}
           </span>

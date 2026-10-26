@@ -21,6 +21,15 @@ import chatBubbles from "./cards/chatBubbles";
 import growthCurve from "./cards/growthCurve";
 import stampBadge from "./cards/stampBadge";
 import chapterBar from "./cards/chapterBar";
+import countdownRing from "./cards/countdownRing";
+import chapterNum from "./cards/chapterNum";
+import triCompare from "./cards/triCompare";
+import skillList from "./cards/skillList";
+import danmaku from "./cards/danmaku";
+import dotMatrix from "./cards/dotMatrix";
+import sketchCircle from "./cards/sketchCircle";
+import ctaBubble from "./cards/ctaBubble";
+import tileGrid from "./cards/tileGrid";
 
 export const CARDS: CardDef<any>[] = [
   hookText,
@@ -43,6 +52,15 @@ export const CARDS: CardDef<any>[] = [
   growthCurve,
   stampBadge,
   chapterBar,
+  countdownRing,
+  chapterNum,
+  triCompare,
+  skillList,
+  danmaku,
+  dotMatrix,
+  sketchCircle,
+  ctaBubble,
+  tileGrid,
 ];
 
 export const byKind = (kind: string) => CARDS.find((c) => c.kind === kind);
