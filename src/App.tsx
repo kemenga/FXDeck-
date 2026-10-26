@@ -180,15 +180,25 @@ export default function App() {
     seek(1);
   };
 
-  const addCard = (kind: string) => {
+  /** 加一张卡:at 缺省 = 当前播放头;paramPatch 覆盖默认参数(拖放落位用);
+      指定了 at(时间轴拖放)时把播放头带过去,立刻能看到进场 */
+  const addCard = (kind: string, at?: number, paramPatch?: Record<string, any>) => {
+    const start = at ?? Math.round(now * 10) / 10;
     const card = newCard(
       kind,
-      Math.round(now * 10) / 10,
+      start,
       cards.map((c) => c.id),
     );
+    if (paramPatch) card.params = { ...card.params, ...paramPatch };
     setDoc((d) => (d ? { ...d, cards: [...d.cards, card].sort((a, b) => a.start - b.start) } : { fmt: "fxdeck/1", theme: "dark", cards: [card] }));
     setSelId(card.id);
     setLeftView("list");
+    if (at !== undefined) seek(start + 0.05);
+  };
+
+  /** 画面拖放落卡:pos 按落点区域推定,时间落在当前播放头 */
+  const dropOnStage = (kind: string, pos: string) => {
+    addCard(kind, undefined, { pos });
   };
 
   const removeCard = (id: string) => {
@@ -310,6 +320,15 @@ export default function App() {
   const kinds = useMemo(() => CARDS.map((c) => ({ kind: c.kind, name: c.name, desc: c.desc })), []);
   const tlWidth = Math.max(1200, dur * pps + 400);
 
+  /* 卡片库拖放:时间轴悬停的落点指示(秒),null = 不在拖入 */
+  const [tlDropTime, setTlDropTime] = useState<number | null>(null);
+  const tlDropT = (e: React.DragEvent) => {
+    const el = e.currentTarget as HTMLElement;
+    const r = el.getBoundingClientRect();
+    const t = Math.max(0, Math.min((e.clientX - r.left + el.scrollLeft) / pps, tlWidth / pps - 0.5));
+    return Math.round(t * 10) / 10; // 0.1s 栅格,与色块拖拽/检查器输入一致
+  };
+
   /* 轨道分行:时间重叠的卡排不同行(剪映式多轨),贪心装箱 */
   const lanes = useMemo(() => {
     const laneEnds: number[] = [];
@@ -396,13 +415,24 @@ export default function App() {
               </div>
               <div className="fd-lib">
                 {kinds.map((k) => (
-                  <button key={k.kind} className="fd-libcard" onClick={() => setPreviewKind(k.kind)} title="点击预览动效">
+                  <button
+                    key={k.kind}
+                    className="fd-libcard"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", k.kind);
+                      e.dataTransfer.effectAllowed = "copy";
+                    }}
+                    onDragEnd={() => setTlDropTime(null)}
+                    onClick={() => setPreviewKind(k.kind)}
+                    title="拖到时间轴任意时刻,或拖到画面按区域落位;点击预览动效"
+                  >
                     <b>{k.name}</b>
                     <i>{k.desc}</i>
                   </button>
                 ))}
               </div>
-              <div className="fd-lib-hint">点击卡片预览动效,满意再加到播放头</div>
+              <div className="fd-lib-hint">拖到时间轴/画面直接放置 · 点击卡片先预览动效</div>
             </>
           ) : (
             <>
@@ -451,6 +481,7 @@ export default function App() {
             videoUrl={videoUrl}
             videoMuted
             onVideoMeta={setVideoDur}
+            onDropCard={dropOnStage}
           />
           <div className="fd-transport">
             <span className="fd-tc">
@@ -633,6 +664,21 @@ export default function App() {
             const r = el.getBoundingClientRect();
             seek((e.clientX - r.left + el.scrollLeft) / pps);
           }}
+          onDragOver={(e) => {
+            if (!e.dataTransfer.types.includes("text/plain")) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+            setTlDropTime(tlDropT(e));
+          }}
+          onDragLeave={(e) => {
+            if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setTlDropTime(null);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const kind = e.dataTransfer.getData("text/plain");
+            setTlDropTime(null);
+            if (byKind(kind)) addCard(kind, tlDropT(e));
+          }}
         >
           <div className="fd-tl-inner" style={{ width: tlWidth }}>
             <div className="fd-ruler">
@@ -656,8 +702,13 @@ export default function App() {
                   {byKind(c.kind)?.name ?? c.kind}
                 </div>
               ))}
-              {!cards.length && <div className="fd-track-empty">空轨道 —— 从左侧卡片库加卡,或导入 JSON</div>}
+              {!cards.length && <div className="fd-track-empty">空轨道 —— 从左侧卡片库拖卡进来,或导入 JSON</div>}
             </div>
+            {tlDropTime !== null && (
+              <div className="fd-drop-line" style={{ left: tlDropTime * pps }}>
+                <i>{tlDropTime.toFixed(1)}s</i>
+              </div>
+            )}
             <div className="fd-ph" style={{ left: now * pps }} />
           </div>
         </div>

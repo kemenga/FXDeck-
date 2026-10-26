@@ -17,6 +17,18 @@ const ANCHOR: Record<string, CSSProperties> = {
   center: { left: "50%", top: "50%", transform: "translate(-50%,-50%)" },
 };
 
+export type StagePos = keyof typeof ANCHOR;
+
+/** 拖放落位提示框:每种 pos 高亮的舞台区域(舞台坐标,跟画布一起缩放) */
+const HINT_RECT: Record<StagePos, CSSProperties> = {
+  left: { left: 26, top: 26, bottom: 26, width: 562 },
+  right: { right: 26, top: 26, bottom: 26, width: 562 },
+  top: { left: 640, right: 640, top: 26, height: 326 },
+  bottom: { left: 640, right: 640, bottom: 26, height: 326 },
+  center: { left: 640, top: 404, right: 640, height: 272 },
+};
+const POS_LABEL: Record<StagePos, string> = { left: "左列", right: "右列", top: "顶部", bottom: "底部", center: "居中" };
+
 /** 画布直拖:按下选中并捕获指针,位移按舞台缩放换算写回 offX/offY(≥3px 才算拖,避免误抖) */
 function CardAt({
   card,
@@ -117,6 +129,7 @@ export function Stage({
   videoUrl,
   videoMuted,
   onVideoMeta,
+  onDropCard,
 }: {
   cards: DocCard[];
   now: number;
@@ -126,9 +139,12 @@ export function Stage({
   videoUrl?: string | null;
   videoMuted?: boolean;
   onVideoMeta?: (dur: number) => void;
+  /** 卡片库拖入:落下时回调(kind 已验证存在),pos 按落点区域推定 */
+  onDropCard?: (kind: string, pos: StagePos) => void;
 }) {
   const wrap = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(0.4);
+  const [dropPos, setDropPos] = useState<StagePos | null>(null);
   useLayoutEffect(() => {
     const el = wrap.current;
     if (!el) return;
@@ -139,9 +155,46 @@ export function Stage({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  /** 屏幕坐标 → 落位区域:左右竖带给 left/right,中带按上下再分 top/bottom/center */
+  const posFromPoint = (clientX: number, clientY: number): StagePos => {
+    const r = wrap.current?.getBoundingClientRect();
+    if (!r || r.width <= 0) return "center";
+    const w = W * scale;
+    const h = H * scale;
+    const nx = (clientX - (r.left + (r.width - w) / 2)) / w;
+    const ny = (clientY - (r.top + (r.height - h) / 2)) / h;
+    if (nx < 0.32) return "left";
+    if (nx > 0.68) return "right";
+    if (ny < 0.35) return "top";
+    if (ny > 0.65) return "bottom";
+    return "center";
+  };
   const live = cards.filter((c) => now >= c.start - 0.001 && now < c.end);
   return (
-    <div ref={wrap} className="fd-stagewrap">
+    <div
+      ref={wrap}
+      className="fd-stagewrap"
+      onDragOver={
+        onDropCard
+          ? (e) => {
+              if (!e.dataTransfer.types.includes("text/plain")) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+              setDropPos(posFromPoint(e.clientX, e.clientY));
+            }
+          : undefined
+      }
+      onDragLeave={(e) => {
+        if (!wrap.current?.contains(e.relatedTarget as Node)) setDropPos(null);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const kind = e.dataTransfer.getData("text/plain");
+        setDropPos(null);
+        if (!onDropCard || !byKind(kind)) return;
+        onDropCard(kind, posFromPoint(e.clientX, e.clientY));
+      }}
+    >
       <div className="fd-stage" style={{ width: W, height: H, transform: `translate(-50%,-50%) scale(${scale})` }}>
         {videoUrl ? (
           <video
@@ -168,6 +221,11 @@ export function Stage({
         {live.map((c) => (
           <CardAt key={c.id} card={c} now={now} selected={c.id === selId} onPick={onPick} onMove={onMove} scale={scale} />
         ))}
+        {dropPos ? (
+          <div className="fd-drop-hint" style={HINT_RECT[dropPos]}>
+            <span>{POS_LABEL[dropPos]}</span>
+          </div>
+        ) : null}
       </div>
     </div>
   );

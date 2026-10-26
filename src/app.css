@@ -214,6 +214,10 @@ button {
   gap: 5px;
   color: var(--ink);
   min-height: 74px;
+  cursor: grab;
+}
+.fd-libcard:active {
+  cursor: grabbing;
 }
 .fd-libcard:hover {
   border-color: var(--acc);
@@ -317,6 +321,25 @@ button {
   height: 100%;
   object-fit: contain;
   background: #000;
+}
+/* 拖入落位提示:悬停区域虚线高亮 + 落位名(舞台坐标,随画布缩放) */
+.fd-drop-hint {
+  position: absolute;
+  border: 2px dashed var(--acc);
+  border-radius: 22px;
+  background: rgba(62, 197, 214, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 40;
+}
+.fd-drop-hint span {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--acc);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 .fd-card.is-sel {
   outline: 1.5px dashed rgba(62, 197, 214, 0.65);
@@ -629,6 +652,30 @@ button {
   height: 12px;
   border-radius: 3px;
   background: var(--acc);
+}
+/* 拖放落点指示:卡片从库拖到时间轴时的琥珀虚线 + 时刻标签 */
+.fd-drop-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed #f2b544;
+  z-index: 3;
+  pointer-events: none;
+}
+.fd-drop-line i {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  font-style: normal;
+  font-family: var(--deck-mono);
+  font-size: 10px;
+  color: #f2b544;
+  background: rgba(16, 18, 21, 0.92);
+  border: 1px solid rgba(242, 181, 68, 0.5);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
 }
 
 /* ── 卡片预览弹窗 ── */
