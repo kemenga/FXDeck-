@@ -44,6 +44,27 @@ function run(cmd, args) {
   });
 }
 
+/** 清理中间 PNG 帧:合成完成后帧就没用了(一次导出几千张、几百 MB)。
+    只删 f#####.png,成片 MOV/MP4/WebM 留在目录里;job.keepFrames=true 时整目录保留 */
+function cleanFrames() {
+  if (job.keepFrames) {
+    console.log("keepFrames=true,帧目录保留");
+    return;
+  }
+  let removed = 0;
+  try {
+    for (const f of fs.readdirSync(outDir)) {
+      if (/^f\d{5}\.png$/.test(f)) {
+        fs.rmSync(path.join(outDir, f), { force: true });
+        removed++;
+      }
+    }
+    console.log(`frames cleaned: ${removed}`);
+  } catch {
+    /* 清理失败不影响导出结果 */
+  }
+}
+
 // 这台 Windows 上新 headless(全版本)被系统层拦杀(crashpad 自杀),只有 shell 精简内核能跑;
 // 而 shell 的 omitBackground 有 bug(整帧 alpha=0,连内容一起透明)。
 // 所以 alpha 靠重构:每帧对黑、白两种页面底各截一张不透明图,
@@ -124,6 +145,7 @@ try {
       "192k",
       path.join(outDir, "final.mp4"),
     ]);
+    cleanFrames();
     console.log(JSON.stringify({ ok: true, final: path.join(outDir, "final.mp4"), dir: outDir, frames }));
   } else {
     console.log("composing mov");
@@ -167,6 +189,7 @@ try {
       ]);
       webmPath = path.join(outDir, "overlay.webm");
     }
+    cleanFrames();
     console.log(JSON.stringify({ ok: true, mov: path.join(outDir, "overlay.mov"), webm: webmPath, dir: outDir, frames }));
   }
 } catch (e) {
