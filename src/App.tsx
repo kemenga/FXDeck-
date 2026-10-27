@@ -108,6 +108,9 @@ export default function App() {
     return () => clearTimeout(id);
   }, [doc, videoUrl, videoServerSide]);
 
+  /* 最近一次导出结果:顶栏下方常驻条展示,路径可一键复制(替代打断式 alert) */
+  const [lastExport, setLastExport] = useState<{ label: string; path: string; frames: number } | null>(null);
+
   /* 导出进度:busy 期间轮询 /api/status(server/export.ts 的 prog),主按钮实时显示帧计数 */
   const [exportProg, setExportProg] = useState<{ frame: number; total: number } | null>(null);
   useEffect(() => {
@@ -339,7 +342,7 @@ export default function App() {
         body: JSON.stringify({ doc, fps: 30000 / 1001, duration: end + 0.4 }),
       });
       const d = await r.json();
-      if (d.ok) alert(`✅ 透明层导出完成\n\n透明 MOV:${d.mov}\n帧目录:${d.dir}\n\n拖进剪映置顶轨道盖在原片上`);
+      if (d.ok) setLastExport({ label: "透明层", path: d.mov, frames: d.frames ?? 0 });
       else alert(`导出失败:${d.error}`);
     } catch (e) {
       alert(`导出失败:${e}`);
@@ -374,7 +377,7 @@ export default function App() {
         body: JSON.stringify({ doc, fps: 30000 / 1001, duration: renderDur, final: true, video: videoUrl }),
       });
       const d = await r.json();
-      if (d.ok) alert(`✅ 成片导出完成!\n\n${d.final}\n\n口播 + 动效 + 原声都在里面,可直接发布`);
+      if (d.ok) setLastExport({ label: "成片", path: d.final, frames: d.frames ?? 0 });
       else alert(`导出失败:${d.error}`);
     } catch (e) {
       alert(`导出失败:${e}`);
@@ -434,6 +437,20 @@ export default function App() {
         progress={exportProg}
       />
 
+      {lastExport && (
+        <div className="fd-export-note">
+          <span className="fd-note-badge">✅ {lastExport.label}已导出</span>
+          <code>{lastExport.path}</code>
+          <i>{lastExport.frames} 帧</i>
+          <span className="fd-flex" />
+          <button title="复制完整路径" onClick={() => navigator.clipboard?.writeText(lastExport.path).catch(() => {})}>
+            复制路径
+          </button>
+          <button title="关闭" onClick={() => setLastExport(null)}>
+            ✕
+          </button>
+        </div>
+      )}
       <div className="fd-body">
         {/* 左:图标栏 + 面板 */}
         <nav className="fd-rail">
