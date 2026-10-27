@@ -11,6 +11,15 @@ import { fmtTime } from "./core/anim";
 /* 无编排时的稳定空数组:让依赖 cards 的 useMemo/Hooks 不因空态重渲 */
 const EMPTY_CARDS: DocCard[] = [];
 
+/* ── 草稿:一个草稿 = 一个视频的完整处理现场(编排 + 垫底视频 + 播放头)──
+   列表元信息在 fxdeckDrafts,每份现场存 fxdeckDraft.<id>,上次打开记在 fxdeckDraftCurrent;
+   老版单存档 fxdeckAutosave 首次挂载时迁移成「草稿 1」 */
+type DraftMeta = { id: string; name: string; updatedAt: number };
+const DRAFT_LIST_KEY = "fxdeckDrafts";
+const DRAFT_CURRENT_KEY = "fxdeckDraftCurrent";
+const LEGACY_AUTOSAVE_KEY = "fxdeckAutosave";
+const draftKey = (id: string) => `fxdeckDraft.${id}`;
+
 export default function App() {
   const [doc, setDoc] = useState<Doc | null>(null);
   const [now, setNow] = useState(0);
@@ -23,6 +32,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [leftView, setLeftView] = useState<"lib" | "list">("lib");
   const [previewKind, setPreviewKind] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<DraftMeta[]>([]);
+  const [draftId, setDraftId] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const nowRef = useRef(0);
@@ -92,30 +103,113 @@ export default function App() {
     syncHist();
   };
 
-  /* 自动存档:任何编辑后 600ms 落进 localStorage,刷新/误关自动恢复。
-     只存服务器路径的垫底视频(blob 地址存了也是坏的);编排本体全量存 */
-  const AUTOSAVE_KEY = "fxdeckAutosave";
+  /** 把某份草稿现场上屏:编排/垫底视频/播放头;换工程清撤销栈与选中 */
+  const loadDraft = (id: string) => {
+    let saved: any = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(draftKey(id)) ?? "null");
+    } catch {
+      /* 坏档按空草稿处理 */
+    }
+    const nextDoc = saved?.doc?.cards?.length ? (saved.doc as Doc) : null;
+    const vid = saved?.videoServerSide && typeof saved.videoUrl === "string" && saved.videoUrl.startsWith("/_media/") ? saved.videoUrl : null;
+    docRef.current = nextDoc;
+    setDoc(nextDoc);
+    resetHistory();
+    setSelId(null);
+    setVideoUrl(vid);
+    setVideoServerSide(!!vid);
+    setVideoDur(0); // 换了视频,时长等 onLoadedMetadata 重报
+    setPlaying(false);
+    seek(saved?.now ?? 0);
+  };
+
+  /** 立刻把当前现场落盘(切换草稿/关页时用,不等防抖) */
+  const saveDraft = (id: string) => {
+    try {
+      localStorage.setItem(
+        draftKey(id),
+        JSON.stringify({ doc: docRef.current, videoUrl: videoServerSide ? videoUrl : undefined, videoServerSide, now: nowRef.current }),
+      );
+    } catch {
+      /* 存不了就算了 */
+    }
+  };
+
+  /** 草稿操作:切换 / 新建 / 重命名 / 删除 */
+  const switchDraft = (id: string) => {
+    if (!id || id === draftId) return;
+    saveDraft(draftId);
+    localStorage.setItem(DRAFT_CURRENT_KEY, id);
+    setDraftId(id);
+    loadDraft(id);
+  };
+  const newDraft = () => {
+    saveDraft(draftId);
+    const fresh: DraftMeta = { id: `d${Date.now()}`, name: `草稿 ${drafts.length + 1}`, updatedAt: Date.now() };
+    const list = [...drafts, fresh];
+    localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(list));
+    localStorage.setItem(DRAFT_CURRENT_KEY, fresh.id);
+    setDrafts(list);
+    setDraftId(fresh.id);
+    loadDraft(fresh.id); // 无现场 = 空草稿
+  };
+  const renameDraft = () => {
+    const cur = drafts.find((d) => d.id === draftId);
+    if (!cur) return;
+    const name = prompt("草稿名称", cur.name)?.trim();
+    if (!name || name === cur.name) return;
+    const list = drafts.map((d) => (d.id === cur.id ? { ...d, name } : d));
+    localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(list));
+    setDrafts(list);
+  };
+  const deleteDraft = () => {
+    const cur = drafts.find((d) => d.id === draftId);
+    if (!cur) return;
+    if (!confirm(`删除草稿「${cur.name}」?\n编排与播放头不可恢复(垫底视频文件仍留在服务器)`)) return;
+    localStorage.removeItem(draftKey(cur.id));
+    let list = drafts.filter((d) => d.id !== cur.id);
+    if (!list.length) list = [{ id: `d${Date.now()}`, name: "草稿 1", updatedAt: Date.now() }]; // 最后一张删完补一张空草稿
+    localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(list));
+    const next = list[0];
+    localStorage.setItem(DRAFT_CURRENT_KEY, next.id);
+    setDrafts(list);
+    setDraftId(next.id);
+    loadDraft(next.id);
+  };
+
+  /* 自动存档:当前草稿的任何变化 600ms 后落盘。now 也在依赖里 —— 播放中计时器
+     一直被重置不打紧,停播/停擦洗 600ms 后才真写,顺带把播放头存进现场 */
   useEffect(() => {
+    if (!draftId) return;
     const id = setTimeout(() => {
       try {
-        if (!doc) {
-          localStorage.removeItem(AUTOSAVE_KEY);
-          return;
-        }
-        localStorage.setItem(
-          AUTOSAVE_KEY,
-          JSON.stringify({
-            doc,
-            videoUrl: videoServerSide ? videoUrl : undefined,
-            videoServerSide,
-          }),
-        );
+        localStorage.setItem(draftKey(draftId), JSON.stringify({ doc, videoUrl: videoServerSide ? videoUrl : undefined, videoServerSide, now }));
+        setDrafts((list) => {
+          const next = list.map((d) => (d.id === draftId ? { ...d, updatedAt: Date.now() } : d));
+          localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(next));
+          return next;
+        });
       } catch {
-        /* 隐私模式存不了就算了 */
+        /* 存不了就算了 */
       }
     }, 600);
     return () => clearTimeout(id);
-  }, [doc, videoUrl, videoServerSide]);
+  }, [doc, videoUrl, videoServerSide, now, draftId]);
+
+  /* 关页/切后台前把播放头等现场同步落盘(防抖等不到) */
+  useEffect(() => {
+    const flush = () => draftId && saveDraft(draftId);
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- saveDraft 只读 ref 与当下 state
+  }, [draftId, videoUrl, videoServerSide]);
+
+  /* 当前草稿名跟到页签标题,多草稿切换时一眼可辨 */
+  useEffect(() => {
+    const cur = drafts.find((d) => d.id === draftId);
+    document.title = cur ? `${cur.name} · FXDeck` : "FXDeck";
+  }, [drafts, draftId]);
 
   const cards = doc?.cards ?? EMPTY_CARDS;
   const sel = cards.find((c) => c.id === selId) ?? null;
@@ -164,27 +258,28 @@ export default function App() {
     }
   }, [videoUrl]);
 
-  /* 挂载恢复:上次自动存档的编排 + 垫底视频(服务器路径,刷新不丢) */
+  /* 挂载:恢复草稿列表与上次打开的草稿;老版单存档迁移成「草稿 1」 */
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw);
-      /* eslint-disable react-hooks/set-state-in-effect -- 挂载时一次性恢复存档 */
-      if (saved?.doc?.cards?.length) {
-        docRef.current = saved.doc;
-        setDoc(saved.doc);
-        resetHistory(); // 换了工程,旧历史作废
+      let list: DraftMeta[] = JSON.parse(localStorage.getItem(DRAFT_LIST_KEY) ?? "[]");
+      const legacy = localStorage.getItem(LEGACY_AUTOSAVE_KEY);
+      if (!list.length) {
+        list = [{ id: `d${Date.now()}`, name: "草稿 1", updatedAt: Date.now() }];
+        if (legacy) localStorage.setItem(draftKey(list[0].id), legacy);
       }
-      if (saved?.videoServerSide && typeof saved.videoUrl === "string" && saved.videoUrl.startsWith("/_media/")) {
-        setVideoUrl(saved.videoUrl);
-        setVideoServerSide(true);
-      }
+      if (legacy) localStorage.removeItem(LEGACY_AUTOSAVE_KEY);
+      localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(list));
+      const cur = list.find((d) => d.id === localStorage.getItem(DRAFT_CURRENT_KEY)) ?? list[0];
+      localStorage.setItem(DRAFT_CURRENT_KEY, cur.id);
+      /* eslint-disable react-hooks/set-state-in-effect -- 挂载时一次性恢复草稿 */
+      setDrafts(list);
+      setDraftId(cur.id);
+      loadDraft(cur.id);
       /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
-      /* 坏存档直接忽略 */
+      /* 坏档直接忽略 */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载时一次性恢复;resetHistory 只碰 ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载时一次性恢复;loadDraft 只碰 ref 与 setter
   }, []);
 
   const seek = (t: number) => {
@@ -465,6 +560,14 @@ export default function App() {
       if (d?.ok && d.url) {
         setVideoUrl(d.url);
         setVideoServerSide(true);
+        // 草稿还是默认名时,拿视频文件名当草稿名,切草稿列表一眼能认
+        setDrafts((list) => {
+          const cur = list.find((x) => x.id === draftId);
+          if (!cur || !/^草稿 \d+$/.test(cur.name)) return list;
+          const next = list.map((x) => (x.id === draftId ? { ...x, name: file.name.replace(/\.[^.]+$/, "") } : x));
+          localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(next));
+          return next;
+        });
         return;
       }
       alert(`视频落盘失败(${d?.error ?? `HTTP ${r.status}`}),退回临时模式:预览可用,但导出成片前需重新导入`);
@@ -512,6 +615,23 @@ export default function App() {
           FX<span>DECK</span>
           <i>动效卡座 · v0.1</i>
         </div>
+        {/* 草稿:一个草稿 = 一个视频的处理现场,可多开随切 */}
+        <select className="fd-draftsel" value={draftId} onChange={(e) => switchDraft(e.target.value)} title="切换草稿(每个草稿是一份独立的编排 + 垫底视频现场)">
+          {drafts.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+        <button title="新建草稿" onClick={newDraft}>
+          📄＋
+        </button>
+        <button title="重命名当前草稿" onClick={renameDraft} disabled={!draftId}>
+          ✎
+        </button>
+        <button title="删除当前草稿" onClick={deleteDraft} disabled={!draftId}>
+          🗑
+        </button>
         <span className="fd-flex" />
         <button onClick={() => fileRef.current?.click()}>📥 导入 JSON</button>
         <input ref={fileRef} type="file" accept=".json" hidden onChange={(e) => importJson(e.target.files?.[0] ?? null)} />
@@ -573,9 +693,12 @@ export default function App() {
               </div>
               <div className="fd-lib">
                 {kinds.map((k) => (
-                  <button
+                  /* div 而非 button:button 在 grid 里不随内容长高,缩略图会被压扁(实测) */
+                  <div
                     key={k.kind}
                     className="fd-libcard"
+                    role="button"
+                    tabIndex={0}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", k.kind);
@@ -583,11 +706,14 @@ export default function App() {
                     }}
                     onDragEnd={() => setTlDropTime(null)}
                     onClick={() => setPreviewKind(k.kind)}
+                    onKeyDown={(e) => {
+                      if (e.code === "Enter") setPreviewKind(k.kind);
+                    }}
                     title="拖到时间轴任意时刻,或拖到画面按区域落位;点击预览动效"
                   >
                     <b>{k.name}</b>
                     <i>{k.desc}</i>
-                  </button>
+                  </div>
                 ))}
               </div>
               <div className="fd-lib-hint">拖到时间轴/画面直接放置 · 点击卡片先预览动效</div>
