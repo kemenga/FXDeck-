@@ -753,6 +753,22 @@ button {
   background: rgba(255, 255, 255, 0.35);
   box-shadow: -4px 0 0 rgba(255, 255, 255, 0.35);
 }
+/* 拖拽中的实时时间提示牌 */
+.fd-block-tip {
+  position: absolute;
+  top: -26px;
+  left: 0;
+  z-index: 5;
+  font-family: var(--deck-mono);
+  font-size: 11px;
+  color: var(--acc);
+  background: rgba(16, 18, 21, 0.94);
+  border: 1px solid rgba(62, 197, 214, 0.5);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .fd-block:hover .fd-block-trim::after {
   background: #fff;
   box-shadow: -4px 0 0 #fff;

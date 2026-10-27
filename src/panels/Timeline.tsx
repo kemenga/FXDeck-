@@ -91,11 +91,14 @@ export function Timeline({
     return { n: Math.max(1, laneEnds.length), laneOf };
   }, [cards]);
 
+  /* 拖拽中的色块信息:用于在色块上方挂实时时间提示牌 */
+  const [dragInfo, setDragInfo] = useState<{ id: string; mode: "move" | "trim" } | null>(null);
   /* 时间轴色块拖拽:主体水平拖 = 平移起止(时长不变);右缘手柄拖 = 调 end(trim,最小 0.3s) */
   const drag = useRef<{ id: string; x0: number; start: number; end: number; mode: "move" | "trim" } | null>(null);
   const onBlockDown = (e: React.PointerEvent, c: DocCard, mode: "move" | "trim") => {
     e.stopPropagation();
     onSetSelId(c.id);
+    setDragInfo({ id: c.id, mode });
     drag.current = { id: c.id, x0: e.clientX, start: c.start, end: c.end, mode };
     // 合成事件没有活动指针时会抛,不影响拖拽本身
     try {
@@ -117,6 +120,7 @@ export function Timeline({
   };
   const onBlockUp = () => {
     drag.current = null;
+    setDragInfo(null);
   };
 
   /* 播放头擦洗:抓住竖线/线头左右拖,画面与垫底视频跟手;拖动中暂停,松手恢复播放。
@@ -257,6 +261,11 @@ export function Timeline({
                   title="拖动整块移动;拖右缘调时长;点选编辑"
                 >
                   {byKind(c.kind)?.name ?? c.kind}
+                  {dragInfo?.id === c.id && (
+                    <span className="fd-block-tip">
+                      {c.start.toFixed(1)}–{c.end.toFixed(1)}s{dragInfo.mode === "trim" ? " · 调时长" : ""}
+                    </span>
+                  )}
                   <span className="fd-block-trim" onPointerDown={(e) => onBlockDown(e, c, "trim")} title="拖动调整时长" />
                 </div>
               ))}
