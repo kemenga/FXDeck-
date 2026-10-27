@@ -48,6 +48,20 @@ export function Timeline({
 
   /* 卡片库拖放:时间轴悬停的落点指示(秒),null = 不在拖入 */
   const [tlDropTime, setTlDropTime] = useState<number | null>(null);
+  /* 快捷键速查卡:? 键或工具栏按钮切换 */
+  const [showKeys, setShowKeys] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable) return;
+      if (e.code === "Slash") {
+        e.preventDefault();
+        setShowKeys((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   // 拖拽在时间轴外松手(dragend 在源元素上触发,冒泡到 window)也要清指示
   useEffect(() => {
     const clear = () => setTlDropTime(null);
@@ -154,10 +168,46 @@ export function Timeline({
           ＋
         </button>
         <span className="fd-zoom-val">{pps}px/s</span>
+        <button title="快捷键速查(?)" onClick={() => setShowKeys((v) => !v)}>
+          ?
+        </button>
         <span className="fd-flex" />
         <button disabled={!sel} onClick={() => sel && onRemoveCard(sel.id)}>
           🗑 删除选中
         </button>
+        {showKeys && (
+          <div className="fd-keys">
+            <b>快捷键</b>
+            <div className="fd-keys-row">
+              <kbd>空格</kbd>
+              <span>播放 / 暂停</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>← / →</kbd>
+              <span>播放头 ±0.5s</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>Alt+← / →</kbd>
+              <span>微调选中卡 ±0.1s</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>Del</kbd>
+              <span>删除选中卡</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>Ctrl+Z</kbd>
+              <span>撤销</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>Ctrl+Shift+Z</kbd>
+              <span>重做</span>
+            </div>
+            <div className="fd-keys-row">
+              <kbd>?</kbd>
+              <span>显示 / 隐藏本面板</span>
+            </div>
+          </div>
+        )}
       </div>
       <div className="fd-timeline">
         <div
