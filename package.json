@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "node scripts/check-env.mjs",
+    "test": "vitest run",
     "export-demo": "node scripts/export.mjs"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "puppeteer": "25.3.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.72.0",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^5.0.5"
   }
 }
