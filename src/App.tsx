@@ -201,7 +201,7 @@ export default function App() {
     if (videoRef.current) videoRef.current.currentTime = tt;
   };
 
-  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 / Ctrl+Z 撤销 / Ctrl+Shift+Z 重做 */
+  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 / Alt+←→ 微调选中卡 / Ctrl+Z 撤销 / Ctrl+Shift+Z 重做 */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -220,6 +220,18 @@ export default function App() {
         e.preventDefault();
         setDoc((d) => (d ? { ...d, cards: d.cards.filter((c) => c.id !== selId) } : d));
         setSelId(null);
+      } else if (e.altKey && (e.code === "ArrowLeft" || e.code === "ArrowRight") && selId) {
+        // 微调选中卡:整体平移 ±0.1s(时长不变),与 trim 手柄/检查器输入互补
+        e.preventDefault();
+        const dt = e.code === "ArrowLeft" ? -0.1 : 0.1;
+        setDoc((d) =>
+          d
+            ? {
+                ...d,
+                cards: d.cards.map((c) => (c.id === selId ? { ...c, start: Math.max(0, c.start + dt), end: Math.max(0.3, c.end + dt) } : c)),
+              }
+            : d,
+        );
       } else if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
         e.preventDefault();
         seek(nowRef.current + (e.code === "ArrowLeft" ? -0.5 : 0.5));
