@@ -33,6 +33,15 @@ describe("卡片注册表完整性", () => {
     }
   });
 
+  it("demo.json 的卡全部在库且时间合法", () => {
+    const demo = JSON.parse(fs.readFileSync("public/demo.json", "utf8"));
+    const kinds = new Set(CARDS.map((c) => c.kind));
+    for (const c of demo.cards) {
+      expect(kinds.has(c.kind), `demo.json 卡 ${c.kind} 不在库`).toBe(true);
+      expect(c.end, `${c.id} 时间非法`).toBeGreaterThan(c.start);
+    }
+  });
+
   it("SKILL.md 卡片库表收录了每一张卡", () => {
     const md = fs.readFileSync("skill/SKILL.md", "utf8");
     for (const d of CARDS) {
