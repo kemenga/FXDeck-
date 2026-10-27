@@ -26,6 +26,7 @@ import chapterNum from "./cards/chapterNum";
 import triCompare from "./cards/triCompare";
 import skillList from "./cards/skillList";
 import danmaku from "./cards/danmaku";
+import stickerPair from "./cards/stickerPair";
 import dotMatrix from "./cards/dotMatrix";
 import sketchCircle from "./cards/sketchCircle";
 import ctaBubble from "./cards/ctaBubble";
@@ -57,6 +58,7 @@ export const CARDS: CardDef<any>[] = [
   triCompare,
   skillList,
   danmaku,
+  stickerPair,
   dotMatrix,
   sketchCircle,
   ctaBubble,
