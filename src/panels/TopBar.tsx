@@ -12,6 +12,7 @@ export function TopBar({
   onExportMov,
   onExportFinal,
   busy,
+  progress,
 }: {
   onImportJson: (f: File | null) => void;
   onImportVideo: (f: File | null) => void;
@@ -23,6 +24,7 @@ export function TopBar({
   onExportMov: () => void;
   onExportFinal: () => void;
   busy: boolean;
+  progress: { frame: number; total: number } | null;
 }) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   return (
@@ -60,7 +62,7 @@ export function TopBar({
         disabled={busy || !videoUrl}
         title={videoUrl ? "口播原片 + 动效层 + 原声,一条 MP4" : "先导入垫底视频"}
       >
-        {busy ? "导出中…" : "🎬 导出成片"}
+        {busy ? (progress && progress.total > 0 ? `🎬 ${progress.frame}/${progress.total} 帧` : "导出中…") : "🎬 导出成片"}
       </button>
     </header>
   );

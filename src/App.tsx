@@ -108,6 +108,28 @@ export default function App() {
     return () => clearTimeout(id);
   }, [doc, videoUrl, videoServerSide]);
 
+  /* 导出进度:busy 期间轮询 /api/status(server/export.ts 的 prog),主按钮实时显示帧计数 */
+  const [exportProg, setExportProg] = useState<{ frame: number; total: number } | null>(null);
+  useEffect(() => {
+    if (!busy) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const d = await (await fetch("/api/status")).json();
+        if (!alive) return;
+        setExportProg(d?.running ? { frame: d.frame ?? 0, total: d.total ?? 0 } : null);
+      } catch {
+        /* dev server 忙,下个轮询周期再试 */
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [busy]);
+
   const cards = doc?.cards ?? EMPTY_CARDS;
   const sel = cards.find((c) => c.id === selId) ?? null;
   const dur = Math.max(0, ...cards.map((c) => c.end), videoDur);
@@ -381,6 +403,7 @@ export default function App() {
         onExportMov={exportMov}
         onExportFinal={exportFinal}
         busy={busy}
+        progress={exportProg}
       />
 
       <div className="fd-body">
