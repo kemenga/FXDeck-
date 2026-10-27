@@ -76,6 +76,46 @@ description: FXDeck 动效编排——用户提供 SRT 字幕时,根据内容和
 
 params 只写需要覆盖的字段,缺省自动用默认值。id 用 c1、c2… 递增。
 
+### 编排示例(节选,展示多卡搭配与时间关系)
+
+```json
+{
+  "fmt": "fxdeck/1",
+  "theme": "dark",
+  "cards": [
+    { "id": "c1", "kind": "hookText", "start": 0.4, "end": 4.2, "params": { "text": "一条视频|*三个*钩子", "staggerMs": 70, "pos": "center" } },
+    { "id": "c2", "kind": "chapterBar", "start": 0, "end": 96, "params": { "chapters": "为什么做 0/怎么做 21/效果 55/总结 88", "pos": "top" } },
+    { "id": "c4", "kind": "countdownRing", "start": 6, "end": 16, "params": { "seconds": "10", "label": "你猜哪个是 Opus", "pos": "center" } },
+    {
+      "id": "c3",
+      "kind": "bigNumber",
+      "start": 24,
+      "end": 29,
+      "params": { "kicker": "MILESTONE", "value": "10000", "unit": "粉", "note": "三个月达成", "pos": "right" }
+    },
+    {
+      "id": "c5",
+      "kind": "triCompare",
+      "start": 40,
+      "end": 46,
+      "params": { "cols": "GPT 模版,基础水准|GPT + skill,接近可用|Opus 级,断崖领先", "highlight": "2", "pos": "center" }
+    },
+    { "id": "c6", "kind": "stickerPair", "start": 70, "end": 75, "params": { "items": "GPT 是工程思维|Claude 是哲学思维", "pos": "bottom" } },
+    { "id": "c7", "kind": "ctaBubble", "start": 90, "end": 95, "params": { "text": "更新就能用", "sub": "评论区扣 1", "pos": "bottom" } }
+  ]
+}
+```
+
+同 pos 的卡时间上别重叠(会叠在画面同一处);常驻层与主卡错开 pos 是允许的。
+
+### 特殊卡约束(违反会破画面)
+
+- **countdownRing**:`end - start` 必须等于 `seconds` —— 倒计时在卡片时长内走完,别让环播一半被掐断
+- **常驻层**(chapterBar/captionBar/stepFlow):start 拉到段落进点,end 拉到片尾,别逐句反复添加
+- **triCompare**:`highlight` 填列序号(0/1/2,不强调填 -1),与通用强调色 acc 相互独立
+- **stickerPair**:只放 2-3 条短语,每条 ≤10 字,别塞长句
+- **dotMatrix**:`ratio` 填口播里的语义占比(0-100);cols×rows 总格数别超过 40×24
+
 ## 交付
 
 生成后附一张段落表(起止秒/段意/用了哪些卡),存 JSON,提醒:「FXDeck 点 📥 导入 JSON 预览;点卡片改参数;⬇ 导出透明 MOV 拖进剪映顶层」。
