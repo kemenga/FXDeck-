@@ -45,7 +45,8 @@ npm run dev        # http://localhost:5188
 
 ```
 src/
-  App.tsx          # 编辑台主界面(剪映式布局,状态都在这)
+  App.tsx          # 编辑台主容器:全部应用状态与处理器(历史栈/自动存档/导出/快捷键)
+  panels/          # 顶栏 TopBar / 右检查器 Inspector / 底部时间轴 Timeline(收 props 回调)
   CardPreview.tsx  # 卡片动效预览弹窗
   Stage.tsx        # 1920×1080 舞台,编辑台与导出共用(预览即导出的保证)
   ExportView.tsx   # ?export=1 时挂载的逐帧渲染视图
@@ -53,13 +54,16 @@ src/
   registry.ts      # 卡片注册表(加新卡在这里登记)
   core/            # 类型系统(types.ts)+ 缓动纯函数(anim.ts)
   cards/           # 一卡一文件,文件名 = kind 名;shared.ts 放共享工具
+  *.test.ts        # Vitest:doc/anim 纯逻辑 + registry 完整性守卫
 server/
   media.ts         # dev 中间件:垫底视频上传落盘 → public/_media/
   export.ts        # dev 中间件:导出任务调度(起 scripts/export.mjs,报进度)
 scripts/
   export.mjs       # 无头渲染:puppeteer 逐帧截图(带 alpha)→ ffmpeg 合成
+  check-env.mjs    # npm run check:新机环境体检
+  sync-skill.mjs   # npm run skill:sync:SKILL.md 同步到本机技能目录
 skill/
-  SKILL.md         # AI 编排技能:SRT → FXDeck JSON 的生成规则(可复制到技能目录)
+  SKILL.md         # AI 编排技能:SRT → FXDeck JSON 的生成规则(npm run skill:sync 装机)
 public/
   fonts/           # DeckSans 字体(OFL 许可)
   _media/          # 垫底视频落盘处(用户数据,不入库)
