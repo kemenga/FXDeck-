@@ -30,13 +30,16 @@ npm run dev        # http://localhost:5188
 
 ## 命令
 
-| 命令                | 作用                                                  |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | 起编辑台(端口 5188,含上传/导出中间件)                 |
-| `npm run build`     | 打包前端(本项目以 dev server 工作流为主,build 用得少) |
-| `npm run typecheck` | tsc 类型检查                                          |
-| `npm run lint`      | ESLint 检查                                           |
-| `npm run format`    | Prettier 格式化全库                                   |
+| 命令                 | 作用                                                     |
+| -------------------- | -------------------------------------------------------- |
+| `npm run dev`        | 起编辑台(端口 5188,含上传/导出中间件)                    |
+| `npm run build`      | 打包前端(CI 每次 push 都会跑)                            |
+| `npm run typecheck`  | tsc 类型检查                                             |
+| `npm run lint`       | ESLint 检查                                              |
+| `npm test`           | Vitest 单元测试(编排解析/缓动/卡片库完整性守卫,23 用例)  |
+| `npm run check`      | 新机环境体检(node/git/ffmpeg/依赖/无头内核,缺啥提示装啥) |
+| `npm run skill:sync` | 把 skill/SKILL.md 同步到本机技能目录(AI 编排触发词用)    |
+| `npm run format`     | Prettier 格式化全库                                      |
 
 ## 目录结构
 
