@@ -23,6 +23,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [leftView, setLeftView] = useState<"lib" | "list">("lib");
   const [previewKind, setPreviewKind] = useState<string | null>(null);
+  const [libQuery, setLibQuery] = useState(""); // 卡片库搜索词
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const nowRef = useRef(0);
@@ -349,6 +350,12 @@ export default function App() {
 
   const contentCtrls = sel ? (byKind(sel.kind)?.ctrls ?? []).filter((c) => !["pos", "acc", "offX", "offY"].includes(c.k)) : [];
   const kinds = useMemo(() => CARDS.map((c) => ({ kind: c.kind, name: c.name, desc: c.desc })), []);
+  /* 卡片库搜索:按名称/描述/kind 过滤(大小写不敏感) */
+  const libKinds = useMemo(() => {
+    const q = libQuery.trim().toLowerCase();
+    if (!q) return kinds;
+    return kinds.filter((k) => k.name.toLowerCase().includes(q) || k.desc.toLowerCase().includes(q) || k.kind.toLowerCase().includes(q));
+  }, [kinds, libQuery]);
   const tlWidth = Math.max(1200, dur * pps + 400);
 
   /* 卡片库拖放:时间轴悬停的落点指示(秒),null = 不在拖入 */
@@ -444,8 +451,9 @@ export default function App() {
               <div className="fd-panel-title">
                 卡片库<span>{CARDS.length}</span>
               </div>
+              <input className="fd-lib-search" placeholder="搜卡片名/用途…" value={libQuery} onChange={(e) => setLibQuery(e.target.value)} />
               <div className="fd-lib">
-                {kinds.map((k) => (
+                {libKinds.map((k) => (
                   <button
                     key={k.kind}
                     className="fd-libcard"
@@ -462,6 +470,7 @@ export default function App() {
                     <i>{k.desc}</i>
                   </button>
                 ))}
+                {!libKinds.length && <div className="fd-lib-nomatch">没有匹配「{libQuery}」的卡片</div>}
               </div>
               <div className="fd-lib-hint">拖到时间轴/画面直接放置 · 点击卡片先预览动效</div>
             </>
