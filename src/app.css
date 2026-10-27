@@ -865,3 +865,201 @@ body.fd-export .fd-stage {
   white-space: nowrap;
   direction: rtl; /* 超长路径截头部留尾部(文件名在最后) */
 }
+
+/* AI 助手聊天窗:右侧浮动面板 */
+.fd-ai {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  bottom: 190px;
+  width: 430px;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.fd-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.fd-ai-head b {
+  font-size: 13px;
+}
+.fd-ai-head select {
+  background: var(--elev);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.fd-ai-missing {
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+.fd-ai-msgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fd-ai-empty {
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.9;
+  padding: 12px;
+}
+.fd-ai-user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: color-mix(in srgb, var(--acc) 18%, var(--elev));
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, var(--line-2));
+  border-radius: 12px 12px 3px 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.fd-ai-bot {
+  align-self: flex-start;
+  max-width: 95%;
+  background: var(--elev);
+  border: 1px solid var(--line-2);
+  border-radius: 12px 12px 12px 3px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.fd-ai-bot.is-running {
+  border-color: color-mix(in srgb, var(--acc) 55%, var(--line-2));
+}
+.fd-ai-bot pre {
+  margin: 0;
+  font-family: var(--deck-font);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.fd-ai-dot {
+  color: var(--ink-3);
+  animation: fd-ai-pulse 1.2s ease-in-out infinite;
+}
+@keyframes fd-ai-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.fd-ai-log {
+  margin-top: 6px;
+  font-family: var(--deck-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+.fd-ai-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+.fd-ai-input textarea {
+  flex: 1;
+  resize: none;
+  background: var(--elev);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.fd-ai-send,
+.fd-ai-stop {
+  align-self: flex-end;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.fd-ai-send {
+  background: var(--acc);
+  color: #08262b;
+  font-weight: 700;
+}
+.fd-ai-send:disabled {
+  opacity: 0.4;
+}
+.fd-ai-stop {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* 顶栏草稿选择器 */
+.fd-draftsel {
+  max-width: 200px;
+  background: var(--elev);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 12.5px;
+}
+
+/* 库缩略图:迷你舞台,复用 Stage 等比缩放 */
+.fd-thumb {
+  position: relative;
+  height: 86px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #0b0d10;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.fd-thumb .fd-stagewrap {
+  position: absolute;
+  inset: 0;
+  flex: none;
+}
+.fd-thumb .fd-stage {
+  background: #0b0d10;
+  box-shadow: none;
+}
+.fd-libcard i {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 库改单列宽卡:缩略图要有意义至少 200px 宽;button 换 div 后 min-height 不再需要 */
+.fd-lib {
+  grid-template-columns: 1fr;
+}
+.fd-libcard {
+  min-height: 0;
+}
+.fd-thumb {
+  height: 118px;
+}
+
+/* 库改 flex 纵排:grid 的 auto 行高在 overflow:auto + 异步挂载内容下会塌(实测 22px),
+   flex 子项 flex:none 按内容定高,滚动手感不变 */
+.fd-lib {
+  display: flex;
+  flex-direction: column;
+}
+.fd-libcard {
+  flex: none;
+}

@@ -6,6 +6,8 @@ import { CARDS, byKind } from "./registry";
 import { newCard, parseDoc, serializeDoc, type Doc, type DocCard } from "./doc";
 import { Stage } from "./Stage";
 import { CardPreview } from "./CardPreview";
+import { CardThumb } from "./CardThumb";
+import { AiChat } from "./AiChat";
 import { fmtTime } from "./core/anim";
 
 /* 无编排时的稳定空数组:让依赖 cards 的 useMemo/Hooks 不因空态重渲 */
@@ -32,6 +34,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [leftView, setLeftView] = useState<"lib" | "list">("lib");
   const [previewKind, setPreviewKind] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
   const [drafts, setDrafts] = useState<DraftMeta[]>([]);
   const [draftId, setDraftId] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -636,6 +639,9 @@ export default function App() {
         <button onClick={() => fileRef.current?.click()}>📥 导入 JSON</button>
         <input ref={fileRef} type="file" accept=".json" hidden onChange={(e) => importJson(e.target.files?.[0] ?? null)} />
         <button onClick={loadDemo}>🎬 示例</button>
+        <button onClick={() => setAiOpen((v) => !v)} title="和编程代理聊天改卡片">
+          🤖 AI
+        </button>
         <button onClick={exportJson} disabled={!doc}>
           📤 存 JSON
         </button>
@@ -692,7 +698,7 @@ export default function App() {
                 卡片库<span>{CARDS.length}</span>
               </div>
               <div className="fd-lib">
-                {kinds.map((k) => (
+                {kinds.map((k, i) => (
                   /* div 而非 button:button 在 grid 里不随内容长高,缩略图会被压扁(实测) */
                   <div
                     key={k.kind}
@@ -711,6 +717,7 @@ export default function App() {
                     }}
                     title="拖到时间轴任意时刻,或拖到画面按区域落位;点击预览动效"
                   >
+                    <CardThumb kind={k.kind} phase={i * 0.9} />
                     <b>{k.name}</b>
                     <i>{k.desc}</i>
                   </div>
@@ -1022,6 +1029,8 @@ export default function App() {
           }}
         />
       )}
+      {/* AI 助手聊天窗:终端编程代理挂进编辑台,聊天改卡片源码 */}
+      {aiOpen && <AiChat onClose={() => setAiOpen(false)} />}
       {/* 导出状态条:渲染/合成进度可取消,完成后展示产物路径 */}
       {(expProg || expResult) && (
         <div className="fd-exp-status">
