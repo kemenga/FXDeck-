@@ -1,0 +1,25 @@
+# FXDeck CI:typecheck + lint + test + build,全绿才合格
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # typecheck/lint/test/build 都不需要无头浏览器内核,跳过 puppeteer 的 postinstall 下载(~150MB)
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
