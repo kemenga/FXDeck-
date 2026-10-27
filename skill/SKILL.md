@@ -24,6 +24,7 @@ description: FXDeck 动效编排——用户提供 SRT 字幕时,根据内容和
 | kind          | 用途                                | 关键参数                                                   |
 | ------------- | ----------------------------------- | ---------------------------------------------------------- |
 | hookText      | 开场钩子/金句定格                   | text(\|分行,_强调_), staggerMs                             |
+| conceptText   | 概念大字:单句砸落定场(视觉锚点)     | text(≤8字), kicker, sub                                    |
 | quoteCard     | 金句卡+署名(可当来源行)             | quote(\|分行), author                                      |
 | captionBar    | 底部字幕条(常驻)                    | lines(每行 `起-止 文本`)                                   |
 | pinList       | 要点钉板,逐条钉住                   | title, items(/分隔), stepMs                                |

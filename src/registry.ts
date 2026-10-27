@@ -2,6 +2,7 @@
    再在下面 import + CARDS 里加一行,其余全线自动生效 */
 import type { CardDef } from "./core/types";
 import hookText from "./cards/hookText";
+import conceptText from "./cards/conceptText";
 import quoteCard from "./cards/quoteCard";
 import captionBar from "./cards/captionBar";
 import pinList from "./cards/pinList";
@@ -34,6 +35,7 @@ import tileGrid from "./cards/tileGrid";
 
 export const CARDS: CardDef<any>[] = [
   hookText,
+  conceptText,
   quoteCard,
   captionBar,
   pinList,
