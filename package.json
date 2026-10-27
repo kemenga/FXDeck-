@@ -15,8 +15,7 @@
     "format:check": "prettier --check .",
     "check": "node scripts/check-env.mjs",
     "skill:sync": "node scripts/sync-skill.mjs",
-    "test": "vitest run",
-    "export-demo": "node scripts/export.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "pngjs": "^7.0.0",
