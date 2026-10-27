@@ -3,14 +3,20 @@
    用法:node scripts/export.mjs <job.json>
    job: { doc, fps, duration, base } */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import puppeteer from "puppeteer";
+import { PNG } from "pngjs";
 
 // Chrome 内核缓存未配置时给出人话提示(而不是一屏堆栈)
-if (!process.env.PUPPETEER_CACHE_DIR && !fs.existsSync(path.join(process.env.USERPROFILE ?? "~", ".cache", "puppeteer"))) {
+// 用 os.homedir() 而不是 USERPROFILE:那是 Windows 变量,mac/Linux 上 "~" 字面量不会展开
+const kernelDir = process.env.PUPPETEER_CACHE_DIR ?? path.join(os.homedir(), ".cache", "puppeteer");
+if (!fs.existsSync(kernelDir)) {
   console.error(
-    "找不到无头浏览器内核。设好缓存目录再跑:\n" + "  set PUPPETEER_CACHE_DIR=<chrome缓存目录>\n" + "或装一份:npx puppeteer browsers install chrome",
+    `找不到无头浏览器内核(找过:${kernelDir})。设好缓存目录再跑:\n` +
+      "  export PUPPETEER_CACHE_DIR=<chrome缓存目录>\n" +
+      "或装一份:npx puppeteer browsers install chrome",
   );
   process.exit(1);
 }
@@ -103,8 +109,21 @@ try {
   // 底色切换后必须等页面的 rAF 循环走两帧再截:立即截会拍到上一帧
   // (页面里的常驻 rAF 循环保证这两帧一定会来)。
   const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  // 空帧跳过:画面只在卡窗口内有内容(Stage 的活卡判定是 now ∈ [start-0.001, end)),
+  // 空段全透明,截图纯浪费 —— 复用同一张全零 RGBA PNG(复制是微秒级,截图是百毫秒级)。
+  const liveRanges = doc.cards.map((c) => [c.start, c.end]);
+  const isLiveAt = (t) => liveRanges.some(([s, e]) => t >= s - 0.001 && t < e);
+  const blankPath = path.join(outDir, "blank.png");
+  fs.writeFileSync(blankPath, PNG.sync.write(new PNG({ width: 1920, height: 1080 })));
+  let blankFrames = 0;
   for (let i = 0; i < frames; i++) {
     const t = i / fps;
+    if (!isLiveAt(t)) {
+      fs.copyFileSync(blankPath, path.join(outDir, frameName(i)));
+      blankFrames++;
+      if (i % 20 === 0 || i === frames - 1) console.log(`progress ${i + 1}/${frames}`);
+      continue;
+    }
     await page.evaluate((x) => window.__fxSeek(x), t);
     await settle();
     // 单张 + omitBackground = 直接拿到带真 alpha 的 PNG(GPU 合成路径实测可靠;
@@ -112,6 +131,8 @@ try {
     await page.screenshot({ path: path.join(outDir, frameName(i)), omitBackground: true });
     if (i % 20 === 0 || i === frames - 1) console.log(`progress ${i + 1}/${frames}`);
   }
+  fs.rmSync(blankPath, { force: true });
+  console.log(`blank frames reused: ${blankFrames}/${frames}`);
   await browser.close();
 
   // (旧版这里有一段「黑/白双图重构 alpha」的 Node 逐像素处理——GPU 路径下

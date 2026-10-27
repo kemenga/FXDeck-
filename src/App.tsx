@@ -26,10 +26,71 @@ export default function App() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const nowRef = useRef(0);
-  // 每次提交后同步最新时间到 ref:快捷键等非渲染路径要读「现在」,又不该触发重渲
+  const docRef = useRef<Doc | null>(null);
+  // 每次提交后同步最新时间/编排到 ref:快捷键、撤销栈等非渲染路径要读「现在」,
+  // 又不该触发重渲。commit/undo/redo/import 会同步写 docRef,这里是兜底
   useEffect(() => {
     nowRef.current = now;
+    docRef.current = doc;
   });
+
+  /* ── 撤销/重做:doc 快照栈 ──
+     所有编辑走 commit():基于 docRef 同步算出下一个 doc、记完历史再 setDoc ——
+     记账不放进 setState updater(updater 在渲染期才跑,StrictMode 还会双调用,
+     按钮状态会慢一拍,实际踩过);docRef 的同步写保证连续编辑不丢更新 */
+  const history = useRef<{ past: Doc[]; future: Doc[] }>({ past: [], future: [] });
+  const histTag = useRef<{ tag: string | null; at: number }>({ tag: null, at: 0 });
+  const [histLens, setHistLens] = useState({ p: 0, f: 0 });
+  const syncHist = () => setHistLens({ p: history.current.past.length, f: history.current.future.length });
+  const pushHistory = (d: Doc, tag?: string) => {
+    const h = history.current;
+    if (h.past[h.past.length - 1] === d) return;
+    const t = Date.now();
+    if (!(tag && histTag.current.tag === tag && t - histTag.current.at < 800)) {
+      h.past.push(d);
+      if (h.past.length > 60) h.past.shift();
+      h.future.length = 0;
+    }
+    histTag.current = { tag: tag ?? null, at: t };
+  };
+  /** 会改编排的编辑统一入口 */
+  const commit = (updater: (d: Doc) => Doc, tag?: string) => {
+    const d = docRef.current;
+    if (!d) return;
+    const next = updater(d);
+    if (next === d) return;
+    pushHistory(d, tag);
+    docRef.current = next;
+    setDoc(next);
+    syncHist();
+  };
+  const resetHistory = () => {
+    history.current = { past: [], future: [] };
+    histTag.current = { tag: null, at: 0 };
+    syncHist();
+  };
+  const undo = () => {
+    const h = history.current;
+    const d = docRef.current;
+    if (!d || !h.past.length) return;
+    const prev = h.past.pop()!;
+    h.future.push(d);
+    docRef.current = prev;
+    setDoc(prev);
+    histTag.current = { tag: null, at: 0 };
+    syncHist();
+  };
+  const redo = () => {
+    const h = history.current;
+    const d = docRef.current;
+    if (!d || !h.future.length) return;
+    const next = h.future.pop()!;
+    h.past.push(d);
+    docRef.current = next;
+    setDoc(next);
+    histTag.current = { tag: null, at: 0 };
+    syncHist();
+  };
 
   /* 自动存档:任何编辑后 600ms 落进 localStorage,刷新/误关自动恢复。
      只存服务器路径的垫底视频(blob 地址存了也是坏的);编排本体全量存 */
@@ -110,7 +171,11 @@ export default function App() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       /* eslint-disable react-hooks/set-state-in-effect -- 挂载时一次性恢复存档 */
-      if (saved?.doc?.cards?.length) setDoc(saved.doc);
+      if (saved?.doc?.cards?.length) {
+        docRef.current = saved.doc;
+        setDoc(saved.doc);
+        resetHistory(); // 换了工程,旧历史作废
+      }
       if (saved?.videoServerSide && typeof saved.videoUrl === "string" && saved.videoUrl.startsWith("/_media/")) {
         setVideoUrl(saved.videoUrl);
         setVideoServerSide(true);
@@ -119,6 +184,7 @@ export default function App() {
     } catch {
       /* 坏存档直接忽略 */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载时一次性恢复;resetHistory 只碰 ref
   }, []);
 
   const seek = (t: number) => {
@@ -135,9 +201,13 @@ export default function App() {
       if (e.code === "Space") {
         e.preventDefault();
         setPlaying((p) => !p);
+      } else if ((e.metaKey || e.ctrlKey) && (e.code === "KeyZ" || e.code === "KeyY")) {
+        e.preventDefault();
+        if (e.code === "KeyY" || e.shiftKey) redo();
+        else undo();
       } else if ((e.code === "Delete" || e.code === "Backspace") && selId) {
         e.preventDefault();
-        setDoc((d) => (d ? { ...d, cards: d.cards.filter((c) => c.id !== selId) } : d));
+        commit((d) => ({ ...d, cards: d.cards.filter((c) => c.id !== selId) }));
         setSelId(null);
       } else if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
         e.preventDefault();
@@ -146,6 +216,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- undo/redo/commit 只碰 ref 与稳定 setter,闭包不陈旧
   }, [selId]);
 
   const importJson = async (f: File | null) => {
@@ -156,7 +227,9 @@ export default function App() {
       return;
     }
     if (r.dropped?.length) alert(`跳过 ${r.dropped.map((d) => `${d.kind}×${d.n}`).join(", ")} —— 不是本库的卡或时间非法`);
+    docRef.current = r.doc;
     setDoc(r.doc);
+    resetHistory();
     setSelId(r.doc.cards[0]?.id ?? null);
     setLeftView("list");
     seek(0);
@@ -174,7 +247,9 @@ export default function App() {
   const loadDemo = async () => {
     const r = parseDoc(await (await fetch("/demo.json")).text());
     if (!r.doc) return;
+    docRef.current = r.doc;
     setDoc(r.doc);
+    resetHistory();
     setSelId(r.doc.cards[0]?.id ?? null);
     setLeftView("list");
     seek(1);
@@ -190,7 +265,14 @@ export default function App() {
       cards.map((c) => c.id),
     );
     if (paramPatch) card.params = { ...card.params, ...paramPatch };
-    setDoc((d) => (d ? { ...d, cards: [...d.cards, card].sort((a, b) => a.start - b.start) } : { fmt: "fxdeck/1", theme: "dark", cards: [card] }));
+    if (docRef.current) {
+      commit((d) => ({ ...d, cards: [...d.cards, card].sort((a, b) => a.start - b.start) }));
+    } else {
+      const fresh: Doc = { fmt: "fxdeck/1", theme: "dark", cards: [card] };
+      docRef.current = fresh;
+      setDoc(fresh);
+      resetHistory();
+    }
     setSelId(card.id);
     setLeftView("list");
     if (at !== undefined) seek(start + 0.05);
@@ -202,17 +284,17 @@ export default function App() {
   };
 
   const removeCard = (id: string) => {
-    setDoc((d) => (d ? { ...d, cards: d.cards.filter((c) => c.id !== id) } : d));
+    commit((d) => ({ ...d, cards: d.cards.filter((c) => c.id !== id) }));
     setSelId((s) => (s === id ? null : s));
   };
 
-  const patchSel = (patch: Partial<DocCard>) => {
+  const patchSel = (patch: Partial<DocCard>, tag?: string) => {
     if (!selId) return;
-    setDoc((d) => (d ? { ...d, cards: d.cards.map((c) => (c.id === selId ? { ...c, ...patch } : c)) } : d));
+    commit((d) => ({ ...d, cards: d.cards.map((c) => (c.id === selId ? { ...c, ...patch } : c)) }), tag);
   };
   const patchParam = (k: string, v: any) => {
     if (!selId) return;
-    setDoc((d) => (d ? { ...d, cards: d.cards.map((c) => (c.id === selId ? { ...c, params: { ...c.params, [k]: v } } : c)) } : d));
+    commit((d) => ({ ...d, cards: d.cards.map((c) => (c.id === selId ? { ...c, params: { ...c.params, [k]: v } } : c)) }), `param:${selId}:${k}`);
   };
 
   /* 时间轴色块拖拽:水平拖 = 移动起止(时长不变) */
@@ -228,7 +310,7 @@ export default function App() {
     if (!d) return;
     const dt = Math.round(((e.clientX - d.x0) / pps) * 10) / 10;
     const ns = Math.max(0, d.start + dt);
-    patchSel({ id: d.id, start: ns, end: ns + (d.end - d.start) } as Partial<DocCard>);
+    patchSel({ id: d.id, start: ns, end: ns + (d.end - d.start) } as Partial<DocCard>, `drag:${d.id}`);
   };
   const onBlockUp = () => {
     drag.current = null;
@@ -265,64 +347,109 @@ export default function App() {
     if (d?.wasPlaying) setPlaying(true);
   };
 
-  const exportMov = async () => {
-    if (!doc || !doc.cards.length) {
-      alert("时间轴上还没有卡片");
-      return;
-    }
-    if (busy) return;
-    setBusy(true);
-    const end = Math.max(...doc.cards.map((c) => c.end));
-    try {
-      const r = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc, fps: 30000 / 1001, duration: end + 0.4 }),
-      });
-      const d = await r.json();
-      if (d.ok) alert(`✅ 透明层导出完成\n\n透明 MOV:${d.mov}\n帧目录:${d.dir}\n\n拖进剪映置顶轨道盖在原片上`);
-      else alert(`导出失败:${d.error}`);
-    } catch (e) {
-      alert(`导出失败:${e}`);
-    } finally {
-      setBusy(false);
+  /* ── 导出:POST 受理后立即返回,进度走 /api/status 轮询(长任务不再挂一条易断的连接),
+        结果在右下状态条里展示,可中途取消;刷新页面会自动重连回在跑的任务 ── */
+  const [expProg, setExpProg] = useState<{ frame: number; total: number; stage: string } | null>(null);
+  const [expResult, setExpResult] = useState<{
+    ok: boolean;
+    mov?: string;
+    final?: string;
+    dir?: string;
+    frames?: number;
+    blank?: number;
+    error?: string;
+  } | null>(null);
+
+  const pollExport = async (): Promise<NonNullable<typeof expResult>> => {
+    let fails = 0;
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 400));
+      let s: any;
+      try {
+        s = await (await fetch("/api/status")).json();
+        fails = 0;
+      } catch {
+        if (++fails >= 10) return { ok: false, error: "进度查询连续失败,dev 服务可能已停" };
+        continue;
+      }
+      if (s.running) {
+        setExpProg({ frame: s.frame, total: s.total, stage: s.stage });
+        continue;
+      }
+      return s.result ?? { ok: false, error: "导出异常结束" };
     }
   };
 
-  /* 成片 = 垫底视频 + 动效层 + 原声,一次出可发布的 MP4。
-     时长:卡结束与原片时长取小者(层播完就用 eof_action 保留原片,不白渲) */
-  const exportFinal = async () => {
+  const runExport = async (final: boolean) => {
     if (!doc || !doc.cards.length) {
       alert("时间轴上还没有卡片");
       return;
     }
-    if (!videoUrl) {
-      alert("成片需要口播原片:先点「🎞 垫底视频」导入");
-      return;
-    }
-    if (!videoServerSide) {
-      alert("当前垫底视频是临时模式(服务落盘失败过),请重新导入一次再导成片");
-      return;
+    if (final) {
+      if (!videoUrl) {
+        alert("成片需要口播原片:先点「🎞 垫底视频」导入");
+        return;
+      }
+      if (!videoServerSide) {
+        alert("当前垫底视频是临时模式(服务落盘失败过),请重新导入一次再导成片");
+        return;
+      }
     }
     if (busy) return;
     setBusy(true);
+    setExpResult(null);
+    setExpProg({ frame: 0, total: 0, stage: "render" });
     const end = Math.max(...doc.cards.map((c) => c.end));
-    const renderDur = videoDur > 0 ? Math.min(end + 0.4, videoDur) : end + 0.4;
+    const renderDur = final && videoDur > 0 ? Math.min(end + 0.4, videoDur) : end + 0.4;
     try {
       const r = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc, fps: 30000 / 1001, duration: renderDur, final: true, video: videoUrl }),
+        body: JSON.stringify({ doc, fps: 30000 / 1001, duration: renderDur, final, video: final ? videoUrl : undefined }),
       });
       const d = await r.json();
-      if (d.ok) alert(`✅ 成片导出完成!\n\n${d.final}\n\n口播 + 动效 + 原声都在里面,可直接发布`);
-      else alert(`导出失败:${d.error}`);
+      if (!d.ok) {
+        setExpResult({ ok: false, error: d.error ?? `HTTP ${r.status}` });
+        return;
+      }
+      setExpResult(await pollExport());
     } catch (e) {
-      alert(`导出失败:${e}`);
+      setExpResult({ ok: false, error: String(e) });
     } finally {
       setBusy(false);
+      setExpProg(null);
     }
   };
+
+  const exportMov = () => runExport(false);
+  const exportFinal = () => runExport(true);
+
+  const cancelExport = async () => {
+    try {
+      await fetch("/api/cancel", { method: "POST" });
+    } catch {
+      /* 服务不在就算了 */
+    }
+  };
+
+  /* 刷新重连:挂载时若服务端还有任务在跑,接管进度继续显示 */
+  useEffect(() => {
+    fetch("/api/status")
+      .then((r) => r.json())
+      .then((s) => {
+        if (s?.running) {
+          setBusy(true);
+          setExpProg({ frame: s.frame, total: s.total, stage: s.stage });
+          pollExport().then((result) => {
+            setExpResult(result);
+            setBusy(false);
+            setExpProg(null);
+          });
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在挂载时重连一次
+  }, []);
 
   /* 垫底视频导入:优先落盘到服务器(导出成片要读真实文件),失败退回临时 blob 模式 */
   const handleVideo = async (file: File | null) => {
@@ -507,7 +634,7 @@ export default function App() {
             selId={selId}
             onPick={setSelId}
             onMove={(id, offX, offY) =>
-              setDoc((d) => (d ? { ...d, cards: d.cards.map((c) => (c.id === id ? { ...c, params: { ...c.params, offX, offY } } : c)) } : d))
+              commit((d) => ({ ...d, cards: d.cards.map((c) => (c.id === id ? { ...c, params: { ...c.params, offX, offY } } : c)) }), `move:${id}`)
             }
             videoUrl={videoUrl}
             videoMuted
@@ -683,6 +810,12 @@ export default function App() {
         </button>
         <span className="fd-zoom-val">{pps}px/s</span>
         <span className="fd-flex" />
+        <button title="撤销(Cmd+Z)" disabled={!histLens.p} onClick={undo}>
+          ↩ 撤销
+        </button>
+        <button title="重做(Cmd+Shift+Z)" disabled={!histLens.f} onClick={redo}>
+          ↪ 重做
+        </button>
         <button disabled={!sel} onClick={() => sel && removeCard(sel.id)}>
           🗑 删除选中
         </button>
@@ -762,6 +895,46 @@ export default function App() {
             setPreviewKind(null);
           }}
         />
+      )}
+      {/* 导出状态条:渲染/合成进度可取消,完成后展示产物路径 */}
+      {(expProg || expResult) && (
+        <div className="fd-exp-status">
+          {expProg ? (
+            <>
+              <b>⬆ 导出中</b>
+              <span className="fd-exp-stage">
+                {expProg.stage === "render"
+                  ? "逐帧渲染"
+                  : expProg.stage === "mov"
+                    ? "合成 MOV"
+                    : expProg.stage === "webm"
+                      ? "合成 WebM"
+                      : expProg.stage === "final"
+                        ? "合成成片"
+                        : expProg.stage}
+              </span>
+              <div className="fd-exp-bar">
+                <i style={{ width: expProg.total ? `${Math.round((expProg.frame / expProg.total) * 100)}%` : "4%" }} />
+              </div>
+              <span className="fd-exp-num">{expProg.total ? `${expProg.frame}/${expProg.total}` : "…"}</span>
+              <button onClick={cancelExport}>取消</button>
+            </>
+          ) : (
+            <>
+              <b className={expResult?.ok ? "is-ok" : expResult?.error === "已手动取消" ? "" : "is-err"}>
+                {expResult?.ok ? "✅ 导出完成" : expResult?.error === "已手动取消" ? "⏹ 已取消导出" : "❌ 导出失败"}
+              </b>
+              <span className="fd-exp-detail">
+                {expResult?.ok
+                  ? `${expResult.final ?? expResult.mov ?? ""} · ${expResult.frames} 帧${expResult.blank ? ` · 空帧复用 ${expResult.blank}` : ""}`
+                  : String(expResult?.error ?? "").slice(-200)}
+              </span>
+              <button onClick={() => setExpResult(null)} title="关闭">
+                ✕
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
