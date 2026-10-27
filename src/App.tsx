@@ -216,18 +216,22 @@ export default function App() {
     setDoc((d) => (d ? { ...d, cards: d.cards.map((c) => (c.id === selId ? { ...c, params: { ...c.params, [k]: v } } : c)) } : d));
   };
 
-  /* 时间轴色块拖拽:水平拖 = 移动起止(时长不变) */
-  const drag = useRef<{ id: string; x0: number; start: number; end: number } | null>(null);
-  const onBlockDown = (e: React.PointerEvent, c: DocCard) => {
+  /* 时间轴色块拖拽:主体水平拖 = 平移起止(时长不变);右缘手柄拖 = 调 end(trim,最小 0.3s) */
+  const drag = useRef<{ id: string; x0: number; start: number; end: number; mode: "move" | "trim" } | null>(null);
+  const onBlockDown = (e: React.PointerEvent, c: DocCard, mode: "move" | "trim") => {
     e.stopPropagation();
     setSelId(c.id);
-    drag.current = { id: c.id, x0: e.clientX, start: c.start, end: c.end };
+    drag.current = { id: c.id, x0: e.clientX, start: c.start, end: c.end, mode };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onBlockMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d) return;
     const dt = Math.round(((e.clientX - d.x0) / pps) * 10) / 10;
+    if (d.mode === "trim") {
+      patchSel({ id: d.id, end: Math.max(d.start + 0.3, d.end + dt) } as Partial<DocCard>);
+      return;
+    }
     const ns = Math.max(0, d.start + dt);
     patchSel({ id: d.id, start: ns, end: ns + (d.end - d.start) } as Partial<DocCard>);
   };
@@ -734,12 +738,13 @@ export default function App() {
                   key={c.id}
                   className={"fd-block" + (c.id === selId ? " is-on" : "")}
                   style={{ left: c.start * pps, width: Math.max(30, (c.end - c.start) * pps), top: (lanes.laneOf.get(c.id) ?? 0) * LANE_H + 8 }}
-                  onPointerDown={(e) => onBlockDown(e, c)}
+                  onPointerDown={(e) => onBlockDown(e, c, "move")}
                   onPointerMove={onBlockMove}
                   onPointerUp={onBlockUp}
-                  title="拖动整块移动;点选编辑"
+                  title="拖动整块移动;拖右缘调时长;点选编辑"
                 >
                   {byKind(c.kind)?.name ?? c.kind}
+                  <span className="fd-block-trim" onPointerDown={(e) => onBlockDown(e, c, "trim")} title="拖动调整时长" />
                 </div>
               ))}
               {!cards.length && <div className="fd-track-empty">空轨道 —— 从左侧卡片库拖卡进来,或导入 JSON</div>}

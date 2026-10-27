@@ -646,6 +646,31 @@ button {
   border-color: var(--acc);
   box-shadow: 0 0 0 1.5px var(--acc);
 }
+/* 右缘 trim 手柄:宽热区好抓,视觉是两道竖纹,悬停增亮 */
+.fd-block-trim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.fd-block-trim::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 3px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: -4px 0 0 rgba(255, 255, 255, 0.35);
+}
+.fd-block:hover .fd-block-trim::after {
+  background: #fff;
+  box-shadow: -4px 0 0 #fff;
+}
 .fd-track-empty {
   position: absolute;
   inset: 6px 0;
