@@ -102,6 +102,7 @@ params 只写需要覆盖的字段,缺省自动用默认值。id 用 c1、c2… 
       "params": { "cols": "GPT 模版,基础水准|GPT + skill,接近可用|Opus 级,断崖领先", "highlight": "2", "pos": "center" }
     },
     { "id": "c6", "kind": "stickerPair", "start": 70, "end": 75, "params": { "items": "GPT 是工程思维|Claude 是哲学思维", "pos": "bottom" } },
+    { "id": "c8", "kind": "conceptText", "start": 66, "end": 70, "params": { "text": "收藏≠学会", "kicker": "KEY TAKEAWAY", "pos": "center" } },
     { "id": "c7", "kind": "ctaBubble", "start": 90, "end": 95, "params": { "text": "更新就能用", "sub": "评论区扣 1", "pos": "bottom" } }
   ]
 }
