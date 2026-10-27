@@ -4,7 +4,7 @@ import { byKind } from "./registry";
 import { Stage } from "./Stage";
 
 /* 各卡预览循环时长(秒):够把主动画演完一轮 */
-const PREVIEW_DUR: Record<string, number> = {
+export const PREVIEW_DUR: Record<string, number> = {
   stepFlow: 13,
   terminalCard: 7,
   captionBar: 7,
