@@ -31,7 +31,21 @@ export function Inspector({
     <aside className="fd-inspector">
       <div className="fd-insp-head">
         <b>{byKind(sel.kind)?.name}</b>
-        <select value={sel.kind} title="换卡(文字重填)" onChange={(e) => onPatchSel({ kind: e.target.value, params: { ...byKind(e.target.value)!.defaults } })}>
+        <select
+          value={sel.kind}
+          title="换卡(同名参数自动带上,其余用新卡默认值)"
+          onChange={(e) => {
+            const target = byKind(e.target.value)!;
+            // 换卡携带同名且控件类型一致的参数(标题/条目/落位等少重填),其余落新卡默认值
+            const srcTypes = new Map(byKind(sel.kind)!.ctrls.map((c) => [c.k, c.type]));
+            const carried: Record<string, any> = {};
+            for (const ct of target.ctrls) {
+              const prev = sel.params[ct.k];
+              if (prev !== undefined && srcTypes.get(ct.k) === ct.type) carried[ct.k] = prev;
+            }
+            onPatchSel({ kind: target.kind, params: { ...target.defaults, ...carried } });
+          }}
+        >
           {kinds.map((k) => (
             <option key={k.kind} value={k.kind}>
               {k.name}
