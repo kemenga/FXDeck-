@@ -52,11 +52,20 @@ const shellRoot = path.join(cacheRoot, "chrome-headless-shell");
 let shellExe = null;
 try {
   for (const ver of fs.readdirSync(shellRoot)) {
-    const exe = path.join(shellRoot, ver, "chrome-headless-shell-win64", "chrome-headless-shell.exe");
-    if (fs.existsSync(exe)) {
-      shellExe = exe;
-      break;
+    // 目录名随平台不同:win64 / mac-arm / mac / linux64,以文件名开头匹配,别硬编码平台
+    const verDir = path.join(shellRoot, ver);
+    for (const sub of fs.readdirSync(verDir)) {
+      const subDir = path.join(verDir, sub);
+      if (!fs.statSync(subDir).isDirectory()) continue;
+      for (const f of fs.readdirSync(subDir)) {
+        if (f.startsWith("chrome-headless-shell")) {
+          shellExe = path.join(subDir, f);
+          break;
+        }
+      }
+      if (shellExe) break;
     }
+    if (shellExe) break;
   }
 } catch {
   /* 目录不存在,当没装 */

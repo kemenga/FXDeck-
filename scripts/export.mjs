@@ -3,12 +3,13 @@
    用法:node scripts/export.mjs <job.json>
    job: { doc, fps, duration, base } */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import puppeteer from "puppeteer";
 
 // Chrome 内核缓存未配置时给出人话提示(而不是一屏堆栈)
-if (!process.env.PUPPETEER_CACHE_DIR && !fs.existsSync(path.join(process.env.USERPROFILE ?? "~", ".cache", "puppeteer"))) {
+if (!process.env.PUPPETEER_CACHE_DIR && !fs.existsSync(path.join(os.homedir(), ".cache", "puppeteer"))) {
   console.error(
     "找不到无头浏览器内核。设好缓存目录再跑:\n" + "  set PUPPETEER_CACHE_DIR=<chrome缓存目录>\n" + "或装一份:npx puppeteer browsers install chrome",
   );
