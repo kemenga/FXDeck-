@@ -201,7 +201,7 @@ export default function App() {
     if (videoRef.current) videoRef.current.currentTime = tt;
   };
 
-  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 / Alt+←→ 微调选中卡 / Ctrl+Z 撤销 / Ctrl+Shift+Z 重做 */
+  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 / Alt+←→ 微调选中卡 / Ctrl+D 复制卡 / Ctrl+Z 撤销 / Ctrl+Shift+Z 重做 */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
@@ -220,6 +220,22 @@ export default function App() {
         e.preventDefault();
         setDoc((d) => (d ? { ...d, cards: d.cards.filter((c) => c.id !== selId) } : d));
         setSelId(null);
+      } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyD" && selId) {
+        // 复制选中卡:新卡紧贴原卡尾部,参数全带,自动选中(precise id 由 updater 内取号)
+        e.preventDefault();
+        let newId = "";
+        setDoc((d) => {
+          if (!d) return d;
+          const src = d.cards.find((c) => c.id === selId);
+          if (!src) return d;
+          let n = d.cards.length + 1;
+          while (d.cards.some((c) => c.id === `c${n}`)) n++;
+          newId = `c${n}`;
+          const dur = src.end - src.start;
+          const copy: DocCard = { ...src, id: newId, start: src.end, end: src.end + dur, params: { ...src.params } };
+          return { ...d, cards: [...d.cards, copy].sort((a, b) => a.start - b.start) };
+        });
+        if (newId) setSelId(newId);
       } else if (e.altKey && (e.code === "ArrowLeft" || e.code === "ArrowRight") && selId) {
         // 微调选中卡:整体平移 ±0.1s(时长不变),与 trim 手柄/检查器输入互补
         e.preventDefault();

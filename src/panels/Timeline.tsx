@@ -195,6 +195,10 @@ export function Timeline({
               <span>删除选中卡</span>
             </div>
             <div className="fd-keys-row">
+              <kbd>Ctrl+D</kbd>
+              <span>复制选中卡</span>
+            </div>
+            <div className="fd-keys-row">
               <kbd>Ctrl+Z</kbd>
               <span>撤销</span>
             </div>
