@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "node scripts/check-env.mjs",
+    "skill:sync": "node scripts/sync-skill.mjs",
     "test": "vitest run",
     "export-demo": "node scripts/export.mjs"
   },
