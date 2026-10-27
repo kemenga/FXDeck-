@@ -1,7 +1,7 @@
 /* FXDeck 编辑台 · 剪映式布局:
    顶栏(品牌/工程动作) → 左图标栏+面板(卡片库/已加卡片) → 中央播放器+走带条
    → 右检查器(分区参数) → 底部时间轴(工具条 + 刻度 + 可拖拽色块) */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CARDS, byKind } from "./registry";
 import { newCard, parseDoc, serializeDoc, type Doc, type DocCard } from "./doc";
 import { Stage } from "./Stage";
@@ -12,7 +12,7 @@ import { fmtTime } from "./core/anim";
 const EMPTY_CARDS: DocCard[] = [];
 
 export default function App() {
-  const [doc, setDoc] = useState<Doc | null>(null);
+  const [doc, setDocState] = useState<Doc | null>(null);
   const [now, setNow] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [selId, setSelId] = useState<string | null>(null);
@@ -31,6 +31,55 @@ export default function App() {
   useEffect(() => {
     nowRef.current = now;
   });
+
+  /* 撤销/重做:编辑历史栈。setDoc 在改前把快照压入 undo 栈;
+     800ms 内的连发(拖色块/拖滑杆逐帧触发)合并为一步,栈深上限 50 */
+  const docRef = useRef<Doc | null>(null);
+  const undoRef = useRef<(Doc | null)[]>([]);
+  const redoRef = useRef<(Doc | null)[]>([]);
+  const lastEditRef = useRef(0);
+  const [histLen, setHistLen] = useState({ u: 0, r: 0 });
+  const syncHist = () =>
+    setHistLen((p) => (p.u === undoRef.current.length && p.r === redoRef.current.length ? p : { u: undoRef.current.length, r: redoRef.current.length }));
+
+  const setDoc = useCallback((updater: (d: Doc | null) => Doc | null) => {
+    const prev = docRef.current;
+    const next = updater(prev);
+    if (next === prev) return;
+    const now = Date.now();
+    if (now - lastEditRef.current > 800) {
+      undoRef.current.push(prev);
+      if (undoRef.current.length > 50) undoRef.current.shift();
+    }
+    lastEditRef.current = now;
+    redoRef.current = [];
+    docRef.current = next;
+    setDocState(next);
+    syncHist();
+  }, []);
+
+  const undo = useCallback(() => {
+    const prev = undoRef.current.pop();
+    if (prev === undefined) return;
+    if (docRef.current) redoRef.current.push(docRef.current);
+    lastEditRef.current = 0; // 撤销本身不入栈,下一步编辑重新起一步
+    docRef.current = prev;
+    setDocState(prev);
+    syncHist();
+  }, []);
+
+  const redo = useCallback(() => {
+    const next = redoRef.current.pop();
+    if (next === undefined) return;
+    if (docRef.current) {
+      undoRef.current.push(docRef.current);
+      if (undoRef.current.length > 50) undoRef.current.shift();
+    }
+    lastEditRef.current = 0;
+    docRef.current = next;
+    setDocState(next);
+    syncHist();
+  }, []);
 
   /* 自动存档:任何编辑后 600ms 落进 localStorage,刷新/误关自动恢复。
      只存服务器路径的垫底视频(blob 地址存了也是坏的);编排本体全量存 */
@@ -111,7 +160,7 @@ export default function App() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       /* eslint-disable react-hooks/set-state-in-effect -- 挂载时一次性恢复存档 */
-      if (saved?.doc?.cards?.length) setDoc(saved.doc);
+      if (saved?.doc?.cards?.length) setDoc(() => saved.doc);
       if (saved?.videoServerSide && typeof saved.videoUrl === "string" && saved.videoUrl.startsWith("/_media/")) {
         setVideoUrl(saved.videoUrl);
         setVideoServerSide(true);
@@ -120,7 +169,7 @@ export default function App() {
     } catch {
       /* 坏存档直接忽略 */
     }
-  }, []);
+  }, [setDoc]);
 
   const seek = (t: number) => {
     const tt = Math.max(0, t);
@@ -128,12 +177,19 @@ export default function App() {
     if (videoRef.current) videoRef.current.currentTime = tt;
   };
 
-  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 */
+  /* 快捷键:空格播放 / Del 删卡 / ←→ 步进 / Ctrl+Z 撤销 / Ctrl+Shift+Z 重做 */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable) return;
-      if (e.code === "Space") {
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyY") {
+        e.preventDefault();
+        redo();
+      } else if (e.code === "Space") {
         e.preventDefault();
         setPlaying((p) => !p);
       } else if ((e.code === "Delete" || e.code === "Backspace") && selId) {
@@ -147,7 +203,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selId]);
+  }, [selId, undo, redo, setDoc]);
 
   const importJson = async (f: File | null) => {
     if (!f) return;
@@ -157,7 +213,7 @@ export default function App() {
       return;
     }
     if (r.dropped?.length) alert(`跳过 ${r.dropped.map((d) => `${d.kind}×${d.n}`).join(", ")} —— 不是本库的卡或时间非法`);
-    setDoc(r.doc);
+    setDoc(() => r.doc);
     setSelId(r.doc.cards[0]?.id ?? null);
     setLeftView("list");
     seek(0);
@@ -175,7 +231,7 @@ export default function App() {
   const loadDemo = async () => {
     const r = parseDoc(await (await fetch("/demo.json")).text());
     if (!r.doc) return;
-    setDoc(r.doc);
+    setDoc(() => r.doc);
     setSelId(r.doc.cards[0]?.id ?? null);
     setLeftView("list");
     seek(1);
@@ -687,6 +743,12 @@ export default function App() {
       {/* 底部:时间轴工具条 + 刻度 + 轨道 */}
       <div className="fd-tlbar">
         <span className="fd-tl-title">时间轴</span>
+        <button title="撤销(Ctrl+Z)" disabled={histLen.u === 0} onClick={undo}>
+          ↶
+        </button>
+        <button title="重做(Ctrl+Shift+Z)" disabled={histLen.r === 0} onClick={redo}>
+          ↷
+        </button>
         <button title="缩小" onClick={() => setPps((p) => Math.max(24, p - 16))}>
           −
         </button>
