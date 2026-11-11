@@ -95,7 +95,8 @@ async function launchBrowser() {
 const browser = await launchBrowser();
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+  // 视口 = 舞台逻辑尺寸(Stage.tsx W/H):整页截图即画布,alpha 从页底透出
+  await page.setViewport({ width: 1080, height: 1906, deviceScaleFactor: 1 });
   await page.goto(`${base}/?export=1`, { waitUntil: "networkidle0", timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
   // 等导出视图拿到 job 并挂好 __fxSeek
@@ -114,7 +115,8 @@ try {
   const liveRanges = doc.cards.map((c) => [c.start, c.end]);
   const isLiveAt = (t) => liveRanges.some(([s, e]) => t >= s - 0.001 && t < e);
   const blankPath = path.join(outDir, "blank.png");
-  fs.writeFileSync(blankPath, PNG.sync.write(new PNG({ width: 1920, height: 1080 })));
+  // 尺寸跟舞台走(Stage.tsx W/H):1080×1906 竖屏
+  fs.writeFileSync(blankPath, PNG.sync.write(new PNG({ width: 1080, height: 1906 })));
   let blankFrames = 0;
   for (let i = 0; i < frames; i++) {
     const t = i / fps;

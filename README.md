@@ -1,6 +1,6 @@
 # FXDeck · 动效卡座
 
-给口播视频配动效卡片的编辑台:把 29 种动效卡(钩子大字、数据卡、清单、章节条…)排到时间轴上,
+给口播视频配动效卡片的编辑台:把 31 种动效卡(钩子大字、数据卡、清单、章节条…)排到时间轴上,
 预览即导出 —— 无头浏览器逐帧截图 + ffmpeg 合成**透明 MOV**(拖进剪映置顶轨道)或直接出**成片 MP4**。
 
 ## 快速开始
@@ -22,9 +22,9 @@ npm run dev        # http://localhost:5188
 ## 使用流程
 
 1. 拿到口播稿的 SRT → 用 `skill/SKILL.md` 里的编排技能(AI 按字幕时间生成)产出 `<视频名>-fxdeck.json`
-2. 卡片库支持**拖拽放置**:卡片在库里直接循环播放动效缩略图(滚进视口才动,15fps 省电),拖到时间轴任意时刻落卡(悬停有落点指示线),拖到画面按落点区域自动定 pos(左/右/上/下/中);也可点击卡片先看大窗预览再加到播放头,点卡片改参数、拖色块调时间、拖播放头擦洗预览;一切编辑可撤销/重做(`Cmd+Z` / `Cmd+Shift+Z`,拖拽与滑杆自动合并为一步)
+2. 卡片库支持**拖拽放置**:卡片在库里直接循环播放动效缩略图(滚进视口才动,15fps 省电),拖到时间轴任意时刻落卡(悬停有落点指示线),拖到画面按落点区域自动定 pos(左/右/上/下/中);也可点击卡片先看大窗预览再加到播放头,点卡片改参数、拖色块平移、拖色块右缘调时长、拖播放头擦洗预览;Ctrl+Z 撤销 / Ctrl+Shift+Z 重做(误删可恢复)、Alt+←→ 微调选中卡 ±0.1s、Ctrl+D 复制选中卡、? 弹出快捷键速查
 3. **🤖 AI 助手**:顶栏按钮打开聊天窗,挂本机装好的编程代理(ZCode / Codex / Claude Code 任一,`server/ai.ts` 自动探测),聊天直接改卡片源码——比如「给印章卡加个旋转入场」;引擎未装的会给出安装命令
-4. **⬆ 导出透明层**:出 `overlay.mov`(ProRes 4444 带 alpha),拖进剪映置顶轨道盖在原片上
+4. **⬆ 导出透明层**:出 `overlay.mov`(ProRes 4444 带 alpha),拖进剪映置顶轨道
    **🎬 导出成片**:需先导入「垫底视频」,直接出 `final.mp4`(口播 + 动效 + 原声)
    导出右下角有进度条,可中途取消;刷新页面会自动重连回在跑的任务;时间轴上没卡片的空段自动跳过截图,导出更快
 
@@ -32,33 +32,40 @@ npm run dev        # http://localhost:5188
 
 ## 命令
 
-| 命令                | 作用                                                  |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | 起编辑台(端口 5188,含上传/导出中间件)                 |
-| `npm run build`     | 打包前端(本项目以 dev server 工作流为主,build 用得少) |
-| `npm run typecheck` | tsc 类型检查                                          |
-| `npm run lint`      | ESLint 检查                                           |
-| `npm run format`    | Prettier 格式化全库                                   |
+| 命令                 | 作用                                                     |
+| -------------------- | -------------------------------------------------------- |
+| `npm run dev`        | 起编辑台(端口 5188,含上传/导出中间件)                    |
+| `npm run build`      | 打包前端(CI 每次 push 都会跑)                            |
+| `npm run typecheck`  | tsc 类型检查                                             |
+| `npm run lint`       | ESLint 检查                                              |
+| `npm test`           | Vitest 单元测试(编排解析/缓动/卡片库完整性守卫,23 用例)  |
+| `npm run check`      | 新机环境体检(node/git/ffmpeg/依赖/无头内核,缺啥提示装啥) |
+| `npm run skill:sync` | 把 skill/SKILL.md 同步到本机技能目录(AI 编排触发词用)    |
+| `npm run format`     | Prettier 格式化全库                                      |
 
 ## 目录结构
 
 ```
 src/
-  App.tsx          # 编辑台主界面(剪映式布局,状态都在这)
+  App.tsx          # 编辑台主容器:全部应用状态与处理器(历史栈/自动存档/导出/快捷键)
+  panels/          # 顶栏 TopBar / 右检查器 Inspector / 底部时间轴 Timeline(收 props 回调)
   CardPreview.tsx  # 卡片动效预览弹窗
-  Stage.tsx        # 1920×1080 舞台,编辑台与导出共用(预览即导出的保证)
+  Stage.tsx        # 1080×1906 竖屏舞台(对齐抖音源片),编辑台与导出共用(预览即导出的保证)
   ExportView.tsx   # ?export=1 时挂载的逐帧渲染视图
   doc.ts           # 编排 JSON 的解析/序列化/默认值
   registry.ts      # 卡片注册表(加新卡在这里登记)
   core/            # 类型系统(types.ts)+ 缓动纯函数(anim.ts)
   cards/           # 一卡一文件,文件名 = kind 名;shared.ts 放共享工具
+  *.test.ts        # Vitest:doc/anim 纯逻辑 + registry 完整性守卫
 server/
   media.ts         # dev 中间件:垫底视频上传落盘 → public/_media/
   export.ts        # dev 中间件:导出任务调度(起 scripts/export.mjs,报进度)
 scripts/
   export.mjs       # 无头渲染:puppeteer 逐帧截图(带 alpha)→ ffmpeg 合成
+  check-env.mjs    # npm run check:新机环境体检
+  sync-skill.mjs   # npm run skill:sync:SKILL.md 同步到本机技能目录
 skill/
-  SKILL.md         # AI 编排技能:SRT → FXDeck JSON 的生成规则(可复制到技能目录)
+  SKILL.md         # AI 编排技能:SRT → FXDeck JSON 的生成规则(npm run skill:sync 装机)
 public/
   fonts/           # DeckSans 字体(OFL 许可)
   _media/          # 垫底视频落盘处(用户数据,不入库)

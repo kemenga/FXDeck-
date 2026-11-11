@@ -17,6 +17,12 @@
   src: url("/fonts/DeckSans-900.otf") format("opentype");
   font-weight: 900;
 }
+/* 导出环境显式加载中文字体，避免无头浏览器把中文动效字替换成问号。 */
+@font-face {
+  font-family: "Deck Chinese";
+  src: url("/fonts/SimHei.ttf") format("truetype");
+  font-weight: 400 900;
+}
 
 :root {
   --bg: #101215;
@@ -29,7 +35,7 @@
   --ink-3: rgba(233, 237, 242, 0.34);
   --acc: #3ec5d6;
   --danger: #e07a6a;
-  --deck-font: "Deck Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --deck-font: "Deck Chinese", "Deck Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
   --deck-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
   color-scheme: dark;
 }
@@ -127,6 +133,50 @@ button {
   border-color: var(--acc) !important;
   color: #06272b !important;
   font-weight: 800;
+}
+
+/* 导出结果条:非阻塞展示最近一次导出,路径可复制 */
+.fd-export-note {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: rgba(62, 197, 214, 0.08);
+  border-bottom: 1px solid rgba(62, 197, 214, 0.25);
+  font-size: 12.5px;
+}
+.fd-export-note .fd-note-badge {
+  color: var(--acc);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.fd-export-note code {
+  font-family: var(--deck-mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fd-export-note i {
+  font-style: normal;
+  font-family: var(--deck-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.fd-export-note button {
+  background: var(--elev);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.fd-export-note button:hover {
+  border-color: var(--acc);
 }
 
 /* ── 主体三栏 ── */
@@ -235,6 +285,27 @@ button {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.fd-lib-search {
+  margin: 0 10px 8px;
+  background: var(--elev);
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  color: var(--ink);
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+}
+.fd-lib-search:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+.fd-lib-nomatch {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 24px 0;
 }
 .fd-lib-hint {
   padding: 8px 14px 12px;
@@ -538,6 +609,48 @@ button {
   font-size: 12px;
   padding: 0 8px;
 }
+.fd-tlbar {
+  position: relative;
+}
+.fd-keys {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 12px;
+  z-index: 60;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 250px;
+}
+.fd-keys b {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.fd-keys-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.fd-keys kbd {
+  font-family: var(--deck-mono);
+  font-size: 11px;
+  background: var(--elev);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  padding: 1px 7px;
+  color: var(--ink);
+  white-space: nowrap;
+}
 .fd-tlbar button:hover:not(:disabled) {
   border-color: var(--acc);
 }
@@ -624,6 +737,47 @@ button {
   color: #fff;
   border-color: var(--acc);
   box-shadow: 0 0 0 1.5px var(--acc);
+}
+/* 右缘 trim 手柄:宽热区好抓,视觉是两道竖纹,悬停增亮 */
+.fd-block-trim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.fd-block-trim::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  right: 3px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: -4px 0 0 rgba(255, 255, 255, 0.35);
+}
+/* 拖拽中的实时时间提示牌 */
+.fd-block-tip {
+  position: absolute;
+  top: -26px;
+  left: 0;
+  z-index: 5;
+  font-family: var(--deck-mono);
+  font-size: 11px;
+  color: var(--acc);
+  background: rgba(16, 18, 21, 0.94);
+  border: 1px solid rgba(62, 197, 214, 0.5);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.fd-block:hover .fd-block-trim::after {
+  background: #fff;
+  box-shadow: -4px 0 0 #fff;
 }
 .fd-track-empty {
   position: absolute;
@@ -1017,10 +1171,9 @@ body.fd-export .fd-stage {
   font-size: 12.5px;
 }
 
-/* 库缩略图:迷你舞台,复用 Stage 等比缩放 */
+/* 库缩略图:迷你舞台,复用 Stage 等比缩放。宽高比由组件内联按舞台竖屏比例(1080/1906)给定 */
 .fd-thumb {
   position: relative;
-  height: 86px;
   border-radius: 7px;
   overflow: hidden;
   background: #0b0d10;
@@ -1049,9 +1202,6 @@ body.fd-export .fd-stage {
 }
 .fd-libcard {
   min-height: 0;
-}
-.fd-thumb {
-  height: 118px;
 }
 
 /* 库改 flex 纵排:grid 的 auto 行高在 overflow:auto + 异步挂载内容下会塌(实测 22px),

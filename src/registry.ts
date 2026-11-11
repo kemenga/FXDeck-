@@ -2,6 +2,7 @@
    再在下面 import + CARDS 里加一行,其余全线自动生效 */
 import type { CardDef } from "./core/types";
 import hookText from "./cards/hookText";
+import conceptText from "./cards/conceptText";
 import quoteCard from "./cards/quoteCard";
 import captionBar from "./cards/captionBar";
 import pinList from "./cards/pinList";
@@ -26,13 +27,23 @@ import chapterNum from "./cards/chapterNum";
 import triCompare from "./cards/triCompare";
 import skillList from "./cards/skillList";
 import danmaku from "./cards/danmaku";
+import stickerPair from "./cards/stickerPair";
 import dotMatrix from "./cards/dotMatrix";
 import sketchCircle from "./cards/sketchCircle";
 import ctaBubble from "./cards/ctaBubble";
 import tileGrid from "./cards/tileGrid";
+import newsTitle from "./cards/newsTitle";
+import factChip from "./cards/factChip";
+import topicBadge from "./cards/topicBadge";
+import logoChips from "./cards/logoChips";
+import mindMap from "./cards/mindMap";
+import winVerdict from "./cards/winVerdict";
+import ctaPop from "./cards/ctaPop";
+import rankBoard from "./cards/rankBoard";
 
 export const CARDS: CardDef<any>[] = [
   hookText,
+  conceptText,
   quoteCard,
   captionBar,
   pinList,
@@ -57,10 +68,19 @@ export const CARDS: CardDef<any>[] = [
   triCompare,
   skillList,
   danmaku,
+  stickerPair,
   dotMatrix,
   sketchCircle,
   ctaBubble,
   tileGrid,
+  newsTitle,
+  factChip,
+  topicBadge,
+  logoChips,
+  mindMap,
+  winVerdict,
+  ctaPop,
+  rankBoard,
 ];
 
 export const byKind = (kind: string) => CARDS.find((c) => c.kind === kind);

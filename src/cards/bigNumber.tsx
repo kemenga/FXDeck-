@@ -28,7 +28,7 @@ const def: CardDef<any> = {
           </div>
         ) : null}
         <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-          <span style={{ fontSize: 148, fontWeight: 900, lineHeight: 1, color: "#f4f7fa", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
+          <span style={{ fontSize: 112, fontWeight: 900, lineHeight: 1, color: "#f4f7fa", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
             {shown.toLocaleString("en-US")}
           </span>
           {p.unit ? <span style={{ fontSize: 46, fontWeight: 800, color: "var(--acc)" }}>{String(p.unit)}</span> : null}

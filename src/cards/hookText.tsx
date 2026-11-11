@@ -15,7 +15,7 @@ const def: CardDef<any> = {
   render: ({ p, t }) => {
     const step = Math.max(0.02, (Number(p.staggerMs) || 70) / 1000);
     return (
-      <div style={{ textAlign: "center", maxWidth: 1500, fontFamily: "var(--deck-font)" }}>
+      <div style={{ textAlign: "center", maxWidth: 980, fontFamily: "var(--deck-font)" }}>
         {String(p.text || "")
           .split("|")
           .map((line, li) => (

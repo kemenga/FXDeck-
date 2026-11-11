@@ -2,7 +2,10 @@
 export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 export const easeOut3 = (p: number) => 1 - (1 - clamp01(p)) ** 3;
 export const easeOutExpo = (p: number) => (p >= 1 ? 1 : 1 - 2 ** (-10 * clamp01(p)));
-export const easeIO3 = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
+export const easeIO3 = (p: number) => {
+  const x = clamp01(p); // 卡片时长不齐时进度会超出 [0,1],不夹取会溢出(growthCurve 面积透明度曾涨到 5 倍)
+  return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+};
 /** 回弹:过冲后落定,弹窗/徽章弹出用 */
 export const easeOutBack = (p: number) => {
   const c1 = 1.70158;

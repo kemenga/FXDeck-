@@ -35,7 +35,7 @@ const def: CardDef<any> = {
           <span
             style={{
               ...MONO,
-              fontSize: 128,
+              fontSize: 100,
               fontWeight: 900,
               lineHeight: 0.9,
               color: "var(--acc)",

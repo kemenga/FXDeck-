@@ -21,37 +21,47 @@ description: FXDeck 动效编排——用户提供 SRT 字幕时,根据内容和
 
 ## 卡片库(只能用这些 kind)
 
-| kind          | 用途                           | 关键参数                                                   |
-| ------------- | ------------------------------ | ---------------------------------------------------------- |
-| hookText      | 开场钩子/金句定格              | text(\|分行,_强调_), staggerMs                             |
-| quoteCard     | 金句卡+署名(可当来源行)        | quote(\|分行), author                                      |
-| captionBar    | 底部字幕条(常驻)               | lines(每行 `起-止 文本`)                                   |
-| pinList       | 要点钉板,逐条钉住              | title, items(/分隔), stepMs                                |
-| tickList      | 打勾清单                       | title, items(/分隔), stepMs                                |
-| stepFlow      | 横向步骤链(常驻)               | steps(/分隔), stepMs                                       |
-| bigNumber     | 巨号滚动数字                   | kicker, value, unit, note                                  |
-| barRank       | 横条排名                       | title, rows(`名,值`\|分隔), suffix                         |
-| versusCard    | VS 对比卡,胜者高亮             | aTitle,aSub,bTitle,bSub,winner(a/b/none)                   |
-| termCard      | 术语卡:英文+术语+定义          | en, term, def                                              |
-| punchPill     | 金句药丸,单句弹出              | text                                                       |
-| progressRing  | 进度环:百分比生长              | kicker, value(0-100), unit, label                          |
-| terminalCard  | 终端打字卡                     | title, lines(每行,`$`命令/`✓`成功/`✗`失败/`#`注释), stepMs |
-| statStrip     | 多指标条:2-3个数字并排         | items(每条 `标签,数值,单位`,\|分隔)                        |
-| arrowFlow     | 箭头链:管线/流转图             | items(/分隔), stepMs                                       |
-| markerText    | 荧光笔:色块扫过划重点          | text, kicker                                               |
-| chatBubbles   | 对话气泡:我 vs AI(`>` 开头=AI) | lines(每行一条), stepMs                                    |
-| growthCurve   | 增长曲线:折线自绘+峰值计数     | kicker, points(`标签,数值`\|分隔), unit                    |
-| stampBadge    | 印章:盖判定(亲测可用)          | text, sub, shape(round/rect)                               |
-| chapterBar    | 章节条:全片常驻导航            | chapters(每章 `名称 起始秒` / 分隔)                        |
-| countdownRing | 倒计时环:悬念倒数,环收缩       | seconds(秒), label;卡时长=倒计时长                         |
-| chapterNum    | 章节序号:大号序号转场锚点      | num, kicker, title                                         |
-| triCompare    | 三联对比:三列横评,高亮列描边   | cols(`名称,小注`\|分隔×3), highlight(0/1/2/-1)             |
-| skillList     | 等宽清单:技术感 checklist      | kicker, count, lines(每行一条)                             |
-| danmaku       | 评论弹幕:白底气泡模拟观众评论  | lines(每行一条,`>` 开头=右侧), stepMs                      |
-| dotMatrix     | 点阵矩阵:噪点按占比点亮(隐喻)  | kicker, ratio(0-100), note, cols, rows                     |
-| sketchCircle  | 手绘圈注:马克笔椭圆描画圈重点  | text, kicker                                               |
-| ctaBubble     | CTA 气泡:实底白勾行动号召      | text, sub                                                  |
-| tileGrid      | 图表瓷片:微图表矩阵逐格弹出    | kicker, rows(1-3), cols(2-5)                               |
+| kind          | 用途                                | 关键参数                                                   |
+| ------------- | ----------------------------------- | ---------------------------------------------------------- |
+| hookText      | 开场钩子/金句定格                   | text(\|分行,_强调_), staggerMs                             |
+| conceptText   | 概念大字:单句砸落定场(视觉锚点)     | text(≤8字), kicker, sub                                    |
+| quoteCard     | 金句卡+署名(可当来源行)             | quote(\|分行), author                                      |
+| captionBar    | 底部字幕条(常驻)                    | lines(每行 `起-止 文本`)                                   |
+| pinList       | 要点钉板,逐条钉住                   | title, items(/分隔), stepMs                                |
+| tickList      | 打勾清单                            | title, items(/分隔), stepMs                                |
+| stepFlow      | 横向步骤链(常驻)                    | steps(/分隔), stepMs                                       |
+| bigNumber     | 巨号滚动数字                        | kicker, value, unit, note                                  |
+| barRank       | 横条排名                            | title, rows(`名,值`\|分隔), suffix                         |
+| versusCard    | VS 对比卡,胜者高亮                  | aTitle,aSub,bTitle,bSub,winner(a/b/none)                   |
+| termCard      | 术语卡:英文+术语+定义               | en, term, def                                              |
+| punchPill     | 金句药丸,单句弹出                   | text                                                       |
+| progressRing  | 进度环:百分比生长                   | kicker, value(0-100), unit, label                          |
+| terminalCard  | 终端打字卡                          | title, lines(每行,`$`命令/`✓`成功/`✗`失败/`#`注释), stepMs |
+| statStrip     | 多指标条:2-3个数字并排              | items(每条 `标签,数值,单位`,\|分隔)                        |
+| arrowFlow     | 箭头链:管线/流转图                  | items(/分隔), stepMs                                       |
+| markerText    | 荧光笔:色块扫过划重点               | text, kicker                                               |
+| chatBubbles   | 对话气泡:我 vs AI(`>` 开头=AI)      | lines(每行一条), stepMs                                    |
+| growthCurve   | 增长曲线:折线自绘+峰值计数          | kicker, points(`标签,数值`\|分隔), unit                    |
+| stampBadge    | 印章:盖判定(亲测可用)               | text, sub, shape(round/rect)                               |
+| chapterBar    | 章节条:全片常驻导航                 | chapters(每章 `名称 起始秒` / 分隔)                        |
+| countdownRing | 倒计时环:悬念倒数,环收缩            | seconds(秒), label;卡时长=倒计时长                         |
+| chapterNum    | 章节序号:大号序号转场锚点           | num, kicker, title                                         |
+| triCompare    | 三联对比:三列横评,高亮列描边        | cols(`名称,小注`\|分隔×3), highlight(0/1/2/-1)             |
+| skillList     | 等宽清单:技术感 checklist           | kicker, count, lines(每行一条)                             |
+| danmaku       | 评论弹幕:白底气泡模拟观众评论       | lines(每行一条,`>` 开头=右侧), stepMs                      |
+| stickerPair   | 贴纸标签:白底便签依次弹出(轻量对比) | items(`                                                    | ` 分隔 2-3 条), stepMs |
+| dotMatrix     | 点阵矩阵:噪点按占比点亮(隐喻)       | kicker, ratio(0-100), note, cols, rows                     |
+| sketchCircle  | 手绘圈注:马克笔椭圆描画圈重点       | text, kicker                                               |
+| ctaBubble     | CTA 气泡:实底白勾行动号召           | text, sub                                                  |
+| tileGrid      | 图表瓷片:微图表矩阵逐格弹出         | kicker, rows(1-3), cols(2-5)                               |
+| newsTitle     | 资讯标题卡:白底大标题+色词+动作药丸(情报马白卡包) | kicker, title(*色词*), pill, tone(blue/orange/pink/red/green/dark/sky) |
+| factChip      | 要点芯片:白底圆点芯片逐条弹入(白卡包) | chips(\|分条,*色词*), tone, stepMs                          |
+| topicBadge    | 话题徽章:左上高亮药丸+白药丸组合(白卡包) | hl, rest, row2(,分隔), tone                                |
+| logoChips     | logo圆片阵:白片+名称药丸逐个弹入,可虚线占位(白卡包) | items(名,logo\|分隔), shape(circle/square), dash, stepMs |
+| mindMap       | 连线脑图:上圆片下瓷片弹入后画连线(白卡包) | top, bottom, lines(上-下\|分隔), stepMs, drawAt            |
+| winVerdict    | 窗口判定卡:模拟窗口+图钉药丸+变灰盖章(白卡包) | bodyKicker, bodyText, sidebar, stamps, stampTone, stampStepMs, grayAt, verdict, verdictTone |
+| ctaPop        | CTA组合:心形上浮+点赞关注药丸(白卡包) | heart, likeText, followText, note                          |
+| rankBoard     | 白底横条榜:彩条生长+划线升级反超脚注(白卡包) | title, source, rows(名,值,色,小注\|分隔), upgrade(行号,新名,新值), upgradeAt, note, footnote |
 
 所有卡通用参数:pos(left/right/top/bottom/center)、acc(cyan/amber/rose)、offX/offY(微调 px)。
 
@@ -74,6 +84,47 @@ description: FXDeck 动效编排——用户提供 SRT 字幕时,根据内容和
 ```
 
 params 只写需要覆盖的字段,缺省自动用默认值。id 用 c1、c2… 递增。
+
+### 编排示例(节选,展示多卡搭配与时间关系)
+
+```json
+{
+  "fmt": "fxdeck/1",
+  "theme": "dark",
+  "cards": [
+    { "id": "c1", "kind": "hookText", "start": 0.4, "end": 4.2, "params": { "text": "一条视频|*三个*钩子", "staggerMs": 70, "pos": "center" } },
+    { "id": "c2", "kind": "chapterBar", "start": 0, "end": 96, "params": { "chapters": "为什么做 0/怎么做 21/效果 55/总结 88", "pos": "top" } },
+    { "id": "c4", "kind": "countdownRing", "start": 6, "end": 16, "params": { "seconds": "10", "label": "你猜哪个是 Opus", "pos": "center" } },
+    {
+      "id": "c3",
+      "kind": "bigNumber",
+      "start": 24,
+      "end": 29,
+      "params": { "kicker": "MILESTONE", "value": "10000", "unit": "粉", "note": "三个月达成", "pos": "right" }
+    },
+    {
+      "id": "c5",
+      "kind": "triCompare",
+      "start": 40,
+      "end": 46,
+      "params": { "cols": "GPT 模版,基础水准|GPT + skill,接近可用|Opus 级,断崖领先", "highlight": "2", "pos": "center" }
+    },
+    { "id": "c6", "kind": "stickerPair", "start": 70, "end": 75, "params": { "items": "GPT 是工程思维|Claude 是哲学思维", "pos": "bottom" } },
+    { "id": "c8", "kind": "conceptText", "start": 66, "end": 70, "params": { "text": "收藏≠学会", "kicker": "KEY TAKEAWAY", "pos": "center" } },
+    { "id": "c7", "kind": "ctaBubble", "start": 90, "end": 95, "params": { "text": "更新就能用", "sub": "评论区扣 1", "pos": "bottom" } }
+  ]
+}
+```
+
+同 pos 的卡时间上别重叠(会叠在画面同一处);常驻层与主卡错开 pos 是允许的。
+
+### 特殊卡约束(违反会破画面)
+
+- **countdownRing**:`end - start` 必须等于 `seconds` —— 倒计时在卡片时长内走完,别让环播一半被掐断
+- **常驻层**(chapterBar/captionBar/stepFlow):start 拉到段落进点,end 拉到片尾,别逐句反复添加
+- **triCompare**:`highlight` 填列序号(0/1/2,不强调填 -1),与通用强调色 acc 相互独立
+- **stickerPair**:只放 2-3 条短语,每条 ≤10 字,别塞长句
+- **dotMatrix**:`ratio` 填口播里的语义占比(0-100);cols×rows 总格数别超过 40×24
 
 ## 交付
 

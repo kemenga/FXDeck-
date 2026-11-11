@@ -14,6 +14,11 @@ export const PREVIEW_DUR: Record<string, number> = {
   danmaku: 8,
   triCompare: 8,
   tileGrid: 6,
+  mindMap: 5,
+  winVerdict: 8,
+  rankBoard: 7,
+  ctaPop: 5,
+  newsTitle: 4,
 };
 
 /** 卡片动效预览:默认参数跑一遍,循环播放;重放=重挂;加到播放头=落进时间轴 */
@@ -70,7 +75,7 @@ export function CardPreview({ kind, onClose, onAdd }: { kind: string; onClose: (
             ✕
           </button>
         </div>
-        <div className="fd-pv-stage" style={{ position: "relative", height: "min(52vw, 500px)", background: "#0b0d10" }}>
+        <div className="fd-pv-stage" style={{ position: "relative", aspectRatio: "1080 / 1906", height: "min(62vh, 620px)", background: "#0b0d10" }}>
           {/* key 换 = 整卡重挂,动画从头跑 */}
           <Stage key={tok} cards={[card]} now={t} />
         </div>

@@ -1,0 +1,14 @@
+{
+  "fmt": "fxdeck/1",
+  "theme": "dark",
+  "cards": [
+    { "id": "c1", "kind": "newsTitle", "start": 0.2, "end": 5.2, "params": { "kicker": "2026.10.24 · 新模型实测", "title": "Kimi K3.1 *Pro*", "pill": "测评来了", "tone": "blue", "pos": "top" } },
+    { "id": "c2", "kind": "topicBadge", "start": 5.4, "end": 10.0, "params": { "hl": "免费", "rest": "用上", "row2": "国产大模型,+,所有 Agent", "tone": "green", "pos": "top" } },
+    { "id": "c3", "kind": "factChip", "start": 6.2, "end": 10.2, "params": { "chips": "国产模型 *免费用*|上线即接 *所有 Agent*", "tone": "green", "pos": "left" } },
+    { "id": "c4", "kind": "logoChips", "start": 10.4, "end": 14.0, "params": { "items": "DeepSeek,🐳|Kimi,K|MiniMax,M|豆包,D", "shape": "circle", "dash": true, "pos": "center" } },
+    { "id": "c5", "kind": "mindMap", "start": 14.2, "end": 19.2, "params": { "top": "DeepSeek,🐳|Kimi,K", "bottom": "Claude Code,🐯|Codex,🌀|Qoder,Q", "lines": "0-0|0-1|1-2|1-0", "drawAt": 1.0, "pos": "center" } },
+    { "id": "c6", "kind": "winVerdict", "start": 19.4, "end": 27.4, "params": { "bodyKicker": "🌟", "bodyText": "How can I help?", "sidebar": "新对话,项目,设置", "stamps": "🔒 中文界面|仅订阅用户", "stampTone": "pink", "grayAt": 3.4, "verdict": "✗", "verdictTone": "red", "pos": "center" } },
+    { "id": "c7", "kind": "rankBoard", "start": 27.6, "end": 34.6, "params": { "title": "AA 智能指数", "source": "Artificial Analysis", "rows": "Claude Opus 5.5,58,orange,max|GPT-6 Astra,53,dark|Kimi K3,44,blue,上一代", "upgrade": "2,Kimi K3.1 Pro,55", "upgradeAt": 3.0, "note": "上一代 44 → 55 分,反超 GPT-6(53 分)", "footnote": "数据来源: Artificial Analysis · 2026-10-24", "pos": "center" } },
+    { "id": "c8", "kind": "ctaPop", "start": 34.8, "end": 38.8, "params": { "heart": true, "likeText": "👍 点赞", "followText": "+ 关注", "note": "感谢大家", "pos": "bottom" } }
+  ]
+}

@@ -1,4 +1,4 @@
-/* 舞台:1920×1080 逻辑画布等比缩放;按 now 渲染在场卡片
+/* 舞台:1080×1906 竖屏逻辑画布等比缩放(对齐抖音源片尺寸,导出透明层 1:1 叠加不缩放);按 now 渲染在场卡片
    编辑台和导出视图共用这一个组件 —— 预览即导出的物理保证 */
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ACCENTS } from "./core/types";
@@ -6,8 +6,8 @@ import { byKind } from "./registry";
 import type { DocCard } from "./doc";
 import { outro } from "./core/anim";
 
-export const W = 1920;
-export const H = 1080;
+export const W = 1080;
+export const H = 1906;
 
 const ANCHOR: Record<string, CSSProperties> = {
   left: { left: 110, top: "50%", transform: "translateY(-50%)" },
@@ -21,11 +21,11 @@ export type StagePos = keyof typeof ANCHOR;
 
 /** 拖放落位提示框:每种 pos 高亮的舞台区域(舞台坐标,跟画布一起缩放) */
 const HINT_RECT: Record<StagePos, CSSProperties> = {
-  left: { left: 26, top: 26, bottom: 26, width: 562 },
-  right: { right: 26, top: 26, bottom: 26, width: 562 },
-  top: { left: 640, right: 640, top: 26, height: 326 },
-  bottom: { left: 640, right: 640, bottom: 26, height: 326 },
-  center: { left: 640, top: 404, right: 640, height: 272 },
+  left: { left: 26, top: 26, bottom: 26, width: 340 },
+  right: { right: 26, top: 26, bottom: 26, width: 340 },
+  top: { left: 26, right: 26, top: 26, height: 320 },
+  bottom: { left: 26, right: 26, bottom: 26, height: 320 },
+  center: { left: 26, top: 667, right: 26, height: 572 },
 };
 const POS_LABEL: Record<StagePos, string> = { left: "左列", right: "右列", top: "顶部", bottom: "底部", center: "居中" };
 

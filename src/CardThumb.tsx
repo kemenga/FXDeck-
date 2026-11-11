@@ -44,7 +44,18 @@ export function CardThumb({ kind, phase }: { kind: string; phase: number }) {
     <div
       ref={wrapRef}
       className="fd-thumb"
-      style={{ position: "relative", height: 118, flexShrink: 0, borderRadius: 7, overflow: "hidden", background: "#0b0d10", pointerEvents: "none" }}
+      // 舞台已竖屏化(1080×1906):缩略图按同比例显示,像视频封面墙。
+      // 关键尺寸内联保底:不赌外部样式表的加载时序(dev 缓存丢过 CSS,实际踩过)
+      style={{
+        position: "relative",
+        width: "100%",
+        aspectRatio: "1080 / 1906",
+        flexShrink: 0,
+        borderRadius: 7,
+        overflow: "hidden",
+        background: "#0b0d10",
+        pointerEvents: "none",
+      }}
       aria-hidden
     >
       <Stage cards={[card]} now={t} />
