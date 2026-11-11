@@ -90,7 +90,8 @@ async function launchBrowser() {
 const browser = await launchBrowser();
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+  // 视口 = 舞台逻辑尺寸(Stage.tsx W/H):整页截图即画布,alpha 从页底透出
+  await page.setViewport({ width: 1080, height: 1906, deviceScaleFactor: 1 });
   await page.goto(`${base}/?export=1`, { waitUntil: "networkidle0", timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
   // 等导出视图拿到 job 并挂好 __fxSeek

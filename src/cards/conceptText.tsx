@@ -28,7 +28,7 @@ const def: CardDef<any> = {
         ) : null}
         <div
           style={{
-            fontSize: 190,
+            fontSize: 120,
             fontWeight: 900,
             lineHeight: 1.05,
             color: "var(--acc)",

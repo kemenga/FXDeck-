@@ -28,7 +28,7 @@ const def: CardDef<any> = {
       .slice(0, 6);
     const step = Math.max(0.25, (Number(p.stepMs) || 900) / 1000);
     return (
-      <div style={{ ...FONT, position: "relative", width: 1240, minHeight: rows.length * 92 }}>
+      <div style={{ ...FONT, position: "relative", width: 980, minHeight: rows.length * 92 }}>
         {rows.map((raw, i) => {
           const right = raw.startsWith(">");
           const text = right ? raw.slice(1).trim() : raw;

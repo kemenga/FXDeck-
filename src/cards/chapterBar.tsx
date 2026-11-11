@@ -33,7 +33,7 @@ const def: CardDef<any> = {
     );
     const en = enter(t, 0.02, 0.35);
     return (
-      <div style={{ ...FONT, width: 1100, opacity: en }}>
+      <div style={{ ...FONT, width: 960, opacity: en }}>
         <div style={{ display: "flex", marginBottom: 12 }}>
           {chs.map((c, i) => (
             <div

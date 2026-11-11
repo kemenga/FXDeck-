@@ -48,7 +48,7 @@ src/
   App.tsx          # 编辑台主容器:全部应用状态与处理器(历史栈/自动存档/导出/快捷键)
   panels/          # 顶栏 TopBar / 右检查器 Inspector / 底部时间轴 Timeline(收 props 回调)
   CardPreview.tsx  # 卡片动效预览弹窗
-  Stage.tsx        # 1920×1080 舞台,编辑台与导出共用(预览即导出的保证)
+  Stage.tsx        # 1080×1906 竖屏舞台(对齐抖音源片),编辑台与导出共用(预览即导出的保证)
   ExportView.tsx   # ?export=1 时挂载的逐帧渲染视图
   doc.ts           # 编排 JSON 的解析/序列化/默认值
   registry.ts      # 卡片注册表(加新卡在这里登记)
