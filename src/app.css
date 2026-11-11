@@ -17,6 +17,12 @@
   src: url("/fonts/DeckSans-900.otf") format("opentype");
   font-weight: 900;
 }
+/* 导出环境显式加载中文字体，避免无头浏览器把中文动效字替换成问号。 */
+@font-face {
+  font-family: "Deck Chinese";
+  src: url("/fonts/SimHei.ttf") format("truetype");
+  font-weight: 400 900;
+}
 
 :root {
   --bg: #101215;
@@ -29,7 +35,7 @@
   --ink-3: rgba(233, 237, 242, 0.34);
   --acc: #3ec5d6;
   --danger: #e07a6a;
-  --deck-font: "Deck Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --deck-font: "Deck Chinese", "Deck Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
   --deck-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
   color-scheme: dark;
 }

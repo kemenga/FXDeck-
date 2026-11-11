@@ -2,7 +2,8 @@
    页面背景透明,配合导出脚本的黑/白双底截图重构出带 alpha 的 PNG 序列 */
 import { useEffect, useState } from "react";
 import { Stage } from "./Stage";
-import type { Doc } from "./doc";
+import { byKind } from "./registry";
+import type { Doc, DocCard } from "./doc";
 
 export function ExportView() {
   const [doc, setDoc] = useState<Doc | null>(null);
@@ -13,7 +14,14 @@ export function ExportView() {
     fetch("/api/job")
       .then((r) => r.json())
       .then((d) => {
-        if (d?.doc) setDoc(d.doc);
+        // 手写 job 可能只带覆盖参数:与 UI 的 parseDoc 一致,渲染前补默认值
+        if (d?.doc) {
+          const merged: DocCard[] = d.doc.cards.map((c: DocCard) => ({
+            ...c,
+            params: { ...(byKind(c.kind)?.defaults ?? {}), ...(c.params ?? {}) },
+          }));
+          setDoc({ ...d.doc, cards: merged });
+        }
       })
       .catch(() => {});
     // 常驻 rAF 循环:老 headless 的合成器没人请求帧就会休眠,之后的 DOM 更新
