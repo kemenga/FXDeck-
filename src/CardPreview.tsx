@@ -14,6 +14,11 @@ export const PREVIEW_DUR: Record<string, number> = {
   danmaku: 8,
   triCompare: 8,
   tileGrid: 6,
+  mindMap: 5,
+  winVerdict: 8,
+  rankBoard: 7,
+  ctaPop: 5,
+  newsTitle: 4,
 };
 
 /** 卡片动效预览:默认参数跑一遍,循环播放;重放=重挂;加到播放头=落进时间轴 */

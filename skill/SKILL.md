@@ -54,6 +54,14 @@ description: FXDeck 动效编排——用户提供 SRT 字幕时,根据内容和
 | sketchCircle  | 手绘圈注:马克笔椭圆描画圈重点       | text, kicker                                               |
 | ctaBubble     | CTA 气泡:实底白勾行动号召           | text, sub                                                  |
 | tileGrid      | 图表瓷片:微图表矩阵逐格弹出         | kicker, rows(1-3), cols(2-5)                               |
+| newsTitle     | 资讯标题卡:白底大标题+色词+动作药丸(情报马白卡包) | kicker, title(*色词*), pill, tone(blue/orange/pink/red/green/dark/sky) |
+| factChip      | 要点芯片:白底圆点芯片逐条弹入(白卡包) | chips(\|分条,*色词*), tone, stepMs                          |
+| topicBadge    | 话题徽章:左上高亮药丸+白药丸组合(白卡包) | hl, rest, row2(,分隔), tone                                |
+| logoChips     | logo圆片阵:白片+名称药丸逐个弹入,可虚线占位(白卡包) | items(名,logo\|分隔), shape(circle/square), dash, stepMs |
+| mindMap       | 连线脑图:上圆片下瓷片弹入后画连线(白卡包) | top, bottom, lines(上-下\|分隔), stepMs, drawAt            |
+| winVerdict    | 窗口判定卡:模拟窗口+图钉药丸+变灰盖章(白卡包) | bodyKicker, bodyText, sidebar, stamps, stampTone, stampStepMs, grayAt, verdict, verdictTone |
+| ctaPop        | CTA组合:心形上浮+点赞关注药丸(白卡包) | heart, likeText, followText, note                          |
+| rankBoard     | 白底横条榜:彩条生长+划线升级反超脚注(白卡包) | title, source, rows(名,值,色,小注\|分隔), upgrade(行号,新名,新值), upgradeAt, note, footnote |
 
 所有卡通用参数:pos(left/right/top/bottom/center)、acc(cyan/amber/rose)、offX/offY(微调 px)。
 

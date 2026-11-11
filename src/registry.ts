@@ -32,6 +32,14 @@ import dotMatrix from "./cards/dotMatrix";
 import sketchCircle from "./cards/sketchCircle";
 import ctaBubble from "./cards/ctaBubble";
 import tileGrid from "./cards/tileGrid";
+import newsTitle from "./cards/newsTitle";
+import factChip from "./cards/factChip";
+import topicBadge from "./cards/topicBadge";
+import logoChips from "./cards/logoChips";
+import mindMap from "./cards/mindMap";
+import winVerdict from "./cards/winVerdict";
+import ctaPop from "./cards/ctaPop";
+import rankBoard from "./cards/rankBoard";
 
 export const CARDS: CardDef<any>[] = [
   hookText,
@@ -65,6 +73,14 @@ export const CARDS: CardDef<any>[] = [
   sketchCircle,
   ctaBubble,
   tileGrid,
+  newsTitle,
+  factChip,
+  topicBadge,
+  logoChips,
+  mindMap,
+  winVerdict,
+  ctaPop,
+  rankBoard,
 ];
 
 export const byKind = (kind: string) => CARDS.find((c) => c.kind === kind);
